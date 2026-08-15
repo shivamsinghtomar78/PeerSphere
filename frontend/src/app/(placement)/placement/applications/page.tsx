@@ -1,18 +1,74 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { GlassBadge, EligibilityBadge } from '@/components/ui/GlassBadge';
 import { MatchScore } from '@/components/product/MatchScore';
-import { mockApplications, mockMatchResults } from '@/data/index';
-import { mockStudents } from '@/data/students';
-import { mockJobs } from '@/data/jobs';
+import { LoadingState, EmptyState, ErrorState } from '@/components/states';
+import {
+  fetchAllApplications,
+  fetchAllJobs,
+  fetchAllStudents,
+  convertToFrontendApplication,
+  convertToFrontendJob,
+  convertToFrontendStudent,
+} from '@/services/placement-api';
+import type { BackendApplicationList, BackendJobList, BackendStudentList } from '@/types/api';
+import type { Application, Job, Student } from '@/types';
 import { formatDate, applicationStatusLabel } from '@/lib/utils';
 
 export default function PlacementApplicationsPage() {
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
   const [selectedStatus, setSelectedStatus] = useState('all');
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch data on mount
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [appsData, jobsData, studentsData] = await Promise.all([
+          fetchAllApplications({ pageSize: 100 }),
+          fetchAllJobs({ pageSize: 50 }),
+          fetchAllStudents({ pageSize: 100 }),
+        ]);
+
+        const frontendApps = appsData?.items.map(convertToFrontendApplication) || [];
+        const frontendJobs = jobsData?.items.map(convertToFrontendJob) || [];
+        const frontendStudents = studentsData?.items.map(convertToFrontendStudent) || [];
+
+        setApplications(frontendApps);
+        setJobs(frontendJobs);
+        setStudents(frontendStudents);
+        setIsLoading(false);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load applications');
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+        <LoadingState label="Loading applications..." />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+        <ErrorState title="Failed to load applications" message={error} onRetry={() => window.location.reload()} />
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
@@ -48,10 +104,12 @@ export default function PlacementApplicationsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border-subtle">
-              {mockApplications.map((app) => {
-                const student = mockStudents.find((s) => s.id === app.studentId) || mockStudents[0];
-                const job = mockJobs.find((j) => j.id === app.jobId) || mockJobs[0];
-                const match = mockMatchResults.find((m) => m.studentId === student.id) || mockMatchResults[0];
+              {applications.length > 0 ? (
+                applications.map((app) => {
+                const student = students.find((s) => s.id === app.studentId);
+                const job = jobs.find((j) => j.id === app.jobId);
+
+                if (!student || !job) return null;
 
                 const statusBadge =
                   app.status === 'shortlisted' ? 'success' : app.status === 'under_review' ? 'warning' : 'default';
@@ -71,11 +129,19 @@ export default function PlacementApplicationsPage() {
                     </td>
 
                     <td className="py-3 px-4">
-                      <MatchScore score={match.overallScore} size="sm" showDetails={false} />
+                      {app.matchResult ? (
+                        <MatchScore score={app.matchResult.overallScore} size="sm" showDetails={false} />
+                      ) : (
+                        <span className="text-caption text-text-muted">N/A</span>
+                      )}
                     </td>
 
                     <td className="py-3 px-4">
-                      <EligibilityBadge status={match.eligibilityStatus} />
+                      {app.matchResult ? (
+                        <EligibilityBadge status={app.matchResult.eligibilityStatus} />
+                      ) : (
+                        <GlassBadge variant="default" size="sm">Pending</GlassBadge>
+                      )}
                     </td>
 
                     <td className="py-3 px-4">
@@ -99,7 +165,16 @@ export default function PlacementApplicationsPage() {
                     </td>
                   </tr>
                 );
-              })}
+              }) : (
+                <tr>
+                  <td colSpan={7} className="py-8 px-4 text-center">
+                    <EmptyState
+                      title="No applications found"
+                      description="There are no applications to display."
+                    />
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

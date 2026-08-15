@@ -7,21 +7,56 @@ import { GlassButton } from '@/components/ui/GlassButton';
 import { GlassBadge } from '@/components/ui/GlassBadge';
 import { SkillChip } from '@/components/product/SkillChip';
 import { SkeletonTableRow } from '@/components/ui/Skeleton';
-import { mockStudents } from '@/data/students';
+import { LoadingState, EmptyState, ErrorState } from '@/components/states';
+import {
+  fetchAllStudents,
+  convertToFrontendStudent,
+} from '@/services/placement-api';
+import type { BackendStudentList, BackendStudent } from '@/types/api';
+import type { Student } from '@/types';
 import { formatCgpa } from '@/lib/utils';
 
 export default function PlacementStudentsPage() {
+  const [students, setStudents] = useState<Student[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [deptFilter, setDeptFilter] = useState('all');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Simulate a 500ms data-fetch on mount
+  // Fetch students on mount
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 500);
-    return () => clearTimeout(timer);
+    const fetchStudents = async () => {
+      try {
+        const result = await fetchAllStudents({ pageSize: 100 });
+        const frontendStudents = result?.items.map(convertToFrontendStudent) || [];
+        setStudents(frontendStudents);
+        setLoading(false);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load students');
+        setLoading(false);
+      }
+    };
+
+    fetchStudents();
   }, []);
 
-  const filtered = mockStudents.filter((stu) => {
+  if (loading) {
+    return (
+      <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+        <LoadingState label="Loading students..." />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+        <ErrorState title="Failed to load students" message={error} onRetry={() => window.location.reload()} />
+      </div>
+    );
+  }
+
+  const filtered = students.filter((stu) => {
     const matchesSearch =
       stu.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       stu.rollNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
