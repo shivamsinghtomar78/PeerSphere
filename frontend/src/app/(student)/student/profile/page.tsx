@@ -1,47 +1,130 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { GlassInput } from '@/components/ui/GlassInput';
 import { GlassBadge } from '@/components/ui/GlassBadge';
 import { SkillChip } from '@/components/product/SkillChip';
 import { useToast } from '@/components/ui/Toast';
-import { currentStudent } from '@/data/students';
+import { LoadingState, EmptyState, ErrorState } from '@/components/states';
+import {
+  fetchMyProfile,
+  fetchMySkills,
+  addMySkill,
+  removeMySkill,
+  updateMyProfile,
+  convertToFrontendStudent,
+} from '@/services/student-api';
+import type { BackendStudent, BackendSkillEvidence } from '@/types/api';
+import type { Student, Skill } from '@/types';
 import { formatDate } from '@/lib/utils';
 
 export default function StudentProfilePage() {
-  const [student, setStudent] = useState(currentStudent);
+  const [student, setStudent] = useState<Student | null>(null);
   const [newSkill, setNewSkill] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const handleAddSkill = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newSkill.trim()) return;
-
-    const skillObj = {
-      id: `sk-${Date.now()}`,
-      name: newSkill.trim(),
-      category: 'Student Added',
+  // Fetch profile data on mount
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const backendStudent = await fetchMyProfile();
+        const frontendStudent = convertToFrontendStudent(backendStudent);
+        setStudent(frontendStudent);
+        setIsLoading(false);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load profile');
+        setIsLoading(false);
+      }
     };
 
-    setStudent({
-      ...student,
-      skills: [...student.skills, skillObj],
-    });
-    setNewSkill('');
+    fetchProfile();
+  }, []);
+
+  const handleAddSkill = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newSkill.trim() || !student) return;
+
+    try {
+      const newSkillData = await addMySkill(newSkill.trim());
+      
+      // Add the new skill to local state
+      const skillObj: Skill = {
+        id: newSkillData.skillId || `sk-${Date.now()}`,
+        name: newSkillData.skill?.canonicalName || newSkill.trim(),
+        category: newSkillData.skill?.category || 'Student Added',
+        confidence: newSkillData.confidence || 0,
+      };
+
+      setStudent({
+        ...student,
+        skills: [...student.skills, skillObj],
+      });
+      setNewSkill('');
+      toast('Skill added successfully', 'success');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to add skill';
+      toast(message, 'error');
+    }
   };
 
-  const handleRemoveSkill = (id: string) => {
-    setStudent({
-      ...student,
-      skills: student.skills.filter((s) => s.id !== id),
-    });
+  const handleRemoveSkill = async (id: string) => {
+    if (!student) return;
+
+    try {
+      await removeMySkill(id);
+      setStudent({
+        ...student,
+        skills: student.skills.filter((s) => s.id !== id),
+      });
+      toast('Skill removed successfully', 'success');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to remove skill';
+      toast(message, 'error');
+    }
   };
 
-  const handleSave = () => {
-    toast('Profile saved successfully', 'success');
+  const handleSave = async () => {
+    if (!student) return;
+
+    try {
+      await updateMyProfile({ name: student.name });
+      toast('Profile saved successfully', 'success');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to save profile';
+      toast(message, 'error');
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-5xl mx-auto">
+        <LoadingState label="Loading profile..." />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-5xl mx-auto">
+        <ErrorState title="Failed to load profile" message={error} onRetry={() => window.location.reload()} />
+      </div>
+    );
+  }
+
+  if (!student) {
+    return (
+      <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-5xl mx-auto">
+        <EmptyState
+          title="No profile found"
+          description="Your student profile could not be loaded. Please try again later."
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-5xl mx-auto">
@@ -94,7 +177,7 @@ export default function StudentProfilePage() {
             />
             <GlassInput
               label="Current CGPA"
-              value={student.cgpa.toString()}
+              value={student.cgpa ? student.cgpa.toString() : 'N/A'}
               disabled
               hint="Verified by Placement Cell"
             />

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { GlassButton } from '@/components/ui/GlassButton';
@@ -9,17 +9,70 @@ import { GlassBadge, EligibilityBadge } from '@/components/ui/GlassBadge';
 import { MatchScore, ConfidenceBadge } from '@/components/product/MatchScore';
 import { SkillChip } from '@/components/product/SkillChip';
 import { useToast } from '@/components/ui/Toast';
-import { mockCandidates } from '@/data/index';
-import { mockJobs } from '@/data/jobs';
+import { LoadingState, EmptyState, ErrorState } from '@/components/states';
+import {
+  fetchAllJobs,
+  fetchCandidatesForJob,
+  updateApplicationStatus,
+  convertToFrontendJob,
+  getTopCandidates,
+} from '@/services/placement-api';
+import { fetchMyEvaluations } from '@/services/student-api';
+import type { BackendJob, BackendEvaluation, BackendApplication } from '@/types/api';
+import type { Candidate, Job } from '@/types';
 import { formatCgpa } from '@/lib/utils';
-import type { Candidate } from '@/types';
 
 export default function CandidateRankingPage() {
-  const [candidates, setCandidates] = useState<Candidate[]>(mockCandidates);
+  const [jobs, setJobs] = useState<BackendJob[]>([]);
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedJobId, setSelectedJobId] = useState(mockJobs[0].id);
+  const [selectedJobId, setSelectedJobId] = useState<string>('');
   const [sortBy, setSortBy] = useState<'rank' | 'score' | 'cgpa'>('rank');
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+
+  // Fetch data on mount
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const jobsData = await fetchAllJobs({ pageSize: 20, status: 'PUBLISHED' });
+        const backendJobs = jobsData?.items || [];
+        setJobs(backendJobs);
+        
+        // Select first job and fetch candidates for it
+        if (backendJobs.length > 0) {
+          setSelectedJobId(backendJobs[0].jobId);
+          const candidatesData = await fetchCandidatesForJob(backendJobs[0].jobId);
+          setCandidates(candidatesData);
+        }
+        
+        setIsLoading(false);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load candidates');
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // Fetch candidates when selected job changes
+  useEffect(() => {
+    if (!selectedJobId) return;
+    
+    const fetchCandidates = async () => {
+      try {
+        const candidatesData = await fetchCandidatesForJob(selectedJobId);
+        setCandidates(candidatesData);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to load candidates for this job';
+        toast(message, 'error');
+      }
+    };
+
+    fetchCandidates();
+  }, [selectedJobId, toast]);
 
   const handleShortlistToggle = (studentId: string) => {
     setCandidates((prev) =>
@@ -49,6 +102,42 @@ export default function CandidateRankingPage() {
       if (sortBy === 'cgpa') return b.student.cgpa - a.student.cgpa;
       return (a.rank ?? 99) - (b.rank ?? 99);
     });
+
+  if (isLoading) {
+    return (
+      <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+        <LoadingState label="Loading candidates..." />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+        <ErrorState title="Failed to load candidates" message={error} onRetry={() => window.location.reload()} />
+      </div>
+    );
+  }
+
+  // Create frontend jobs for the selector
+  const frontendJobs = jobs.map(convertToFrontendJob);
+
+  if (frontendJobs.length === 0) {
+    return (
+      <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+        <EmptyState
+          title="No jobs available"
+          description="There are no published jobs with candidates to display."
+        />
+      </div>
+    );
+  }
+
+  // If no job is selected but we have jobs, select the first one
+  if (!selectedJobId && frontendJobs.length > 0) {
+    setSelectedJobId(frontendJobs[0].id);
+    return null; // Re-render with selected job
+  }
 
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
@@ -94,7 +183,7 @@ export default function CandidateRankingPage() {
               onChange={(e) => setSelectedJobId(e.target.value)}
               className="h-10 px-3 py-2 rounded-sm border border-border bg-surface text-text text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ps-focus)]"
             >
-              {mockJobs.map((j) => (
+              {frontendJobs.map((j) => (
                 <option key={j.id} value={j.id}>
                   {j.title} ({j.company})
                 </option>
