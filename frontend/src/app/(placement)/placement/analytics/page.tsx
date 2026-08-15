@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   BarChart,
   Bar,
@@ -14,7 +14,17 @@ import {
 import { GlassCard } from '@/components/ui/GlassCard';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { StatCard } from '@/components/product/StatCard';
-import { mockPlacementStats, mockSkillGapDistribution } from '@/data/index';
+import { LoadingState, EmptyState, ErrorState } from '@/components/states';
+import {
+  fetchPlacementStats,
+  fetchSkillGapsAnalysis,
+  fetchAllStudents,
+  mapBackendPlacementStatsToFrontend,
+  mapBackendSkillGapsToFrontend,
+  convertToFrontendStudent,
+} from '@/services/placement-api';
+import type { BackendPlacementStats, BackendSkillGaps, BackendStudentList } from '@/types/api';
+import type { PlacementStat, SkillGapDistribution, Student } from '@/types';
 
 // Priority → bar color mapping
 const PRIORITY_COLOR: Record<string, string> = {
@@ -25,15 +35,83 @@ const PRIORITY_COLOR: Record<string, string> = {
 
 const ACCENT_COLOR = '#6366f1';
 
-// Department readiness dataset (inline — mirrors the previous progress-bar data)
-const departmentReadiness = [
-  { dept: 'CSE', fullName: 'Computer Science & Engineering', readiness: 86, students: 84, eligible: 78 },
-  { dept: 'IT', fullName: 'Information Technology', readiness: 81, students: 48, eligible: 42 },
-  { dept: 'ECE', fullName: 'Electronics & Communication', readiness: 68, students: 24, eligible: 18 },
-];
-
 export default function PlacementAnalyticsPage() {
-  const stats = mockPlacementStats;
+  const [stats, setStats] = useState<PlacementStat[]>([]);
+  const [skillGapDistribution, setSkillGapDistribution] = useState<SkillGapDistribution[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch data on mount
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [statsData, skillGapsData, studentsData] = await Promise.all([
+          fetchPlacementStats(),
+          fetchSkillGapsAnalysis(),
+          fetchAllStudents({ pageSize: 200 }),
+        ]);
+
+        const frontendStats = statsData ? mapBackendPlacementStatsToFrontend(statsData) : [];
+        const frontendSkillGaps = skillGapsData ? mapBackendSkillGapsToFrontend(skillGapsData) : [];
+        const frontendStudents = studentsData?.items.map(convertToFrontendStudent) || [];
+
+        setStats(frontendStats);
+        setSkillGapDistribution(frontendSkillGaps);
+        setStudents(frontendStudents);
+        setIsLoading(false);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load analytics');
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+        <LoadingState label="Loading analytics..." />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+        <ErrorState title="Failed to load analytics" message={error} onRetry={() => window.location.reload()} />
+      </div>
+    );
+  }
+
+  // Calculate department readiness from students data
+  const departmentReadiness = [];
+  if (students.length > 0) {
+    const deptMap: Record<string, { total: number; eligible: number; readinessSum: number }> = {};
+    for (const student of students) {
+      const dept = student.department || 'Other';
+      if (!deptMap[dept]) {
+        deptMap[dept] = { total: 0, eligible: 0, readinessSum: 0 };
+      }
+      deptMap[dept].total++;
+      deptMap[dept].readinessSum += student.placementReadiness;
+      if (student.placementReadiness >= 80) {
+        deptMap[dept].eligible++;
+      }
+    }
+    for (const [dept, data] of Object.entries(deptMap)) {
+      departmentReadiness.push({
+        dept,
+        fullName: dept === 'CSE' ? 'Computer Science & Engineering' : 
+                  dept === 'IT' ? 'Information Technology' :
+                  dept === 'ECE' ? 'Electronics & Communication' : dept,
+        readiness: Math.round(data.readinessSum / data.total),
+        students: data.total,
+        eligible: data.eligible,
+      });
+    }
+  }
 
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
@@ -101,7 +179,7 @@ export default function PlacementAnalyticsPage() {
             aria-label="Bar chart showing the number of students affected by each skill gap, coloured by priority"
           >
             <BarChart
-              data={mockSkillGapDistribution}
+              data={skillGapDistribution}
               margin={{ top: 8, right: 16, left: 0, bottom: 48 }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" vertical={false} />
@@ -139,7 +217,7 @@ export default function PlacementAnalyticsPage() {
                 formatter={(value) => [value, 'Affected Students']}
               />
               <Bar dataKey="affectedStudents" radius={[4, 4, 0, 0]}>
-                {mockSkillGapDistribution.map((entry, index) => (
+                {skillGapDistribution.map((entry, index) => (
                   <Cell
                     key={`cell-skill-${index}`}
                     fill={PRIORITY_COLOR[entry.priority] ?? ACCENT_COLOR}

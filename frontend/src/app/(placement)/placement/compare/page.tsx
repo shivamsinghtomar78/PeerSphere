@@ -7,16 +7,93 @@ import { GlassButton } from '@/components/ui/GlassButton';
 import { GlassBadge, EligibilityBadge } from '@/components/ui/GlassBadge';
 import { MatchScore } from '@/components/product/MatchScore';
 import { SkillChip } from '@/components/product/SkillChip';
-import { mockStudents } from '@/data/students';
-import { mockJobs } from '@/data/jobs';
-import { mockMatchResults } from '@/data/index';
+import { LoadingState, EmptyState, ErrorState } from '@/components/states';
+import {
+  fetchAllJobs,
+  fetchAllStudents,
+  fetchCandidatesForJob,
+  convertToFrontendJob,
+  convertToFrontendStudent,
+  getTopCandidates,
+} from '@/services/placement-api';
+import type { BackendJob, BackendStudent } from '@/types/api';
+import type { Job, Student, Candidate } from '@/types';
 import { formatCgpa, skillStatusSymbol } from '@/lib/utils';
 
 export default function CandidateComparisonPage() {
-  const targetJob = mockJobs[0];
-  const compareStudents = [mockStudents[1], mockStudents[0], mockStudents[2]]; // Priya (94%), Arjun (72%), Rohan (48%)
+  const [jobs, setJobs] = useState<BackendJob[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [selectedJobId, setSelectedJobId] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const comparisonSkills = [
+  // Fetch data on mount
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [jobsData, studentsData] = await Promise.all([
+          fetchAllJobs({ pageSize: 20, status: 'PUBLISHED' }),
+          fetchAllStudents({ pageSize: 50 }),
+        ]);
+
+        const backendJobs = jobsData?.items || [];
+        const frontendStudents = studentsData?.items.map(convertToFrontendStudent) || [];
+
+        setJobs(backendJobs);
+        setStudents(frontendStudents);
+
+        // Select first job and fetch top candidates
+        if (backendJobs.length > 0) {
+          setSelectedJobId(backendJobs[0].jobId);
+          const candidatesData = await fetchCandidatesForJob(backendJobs[0].jobId);
+          const topCandidates = getTopCandidates(candidatesData, 3);
+          setCandidates(topCandidates);
+        }
+
+        setIsLoading(false);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load comparison data');
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+        <LoadingState label="Loading comparison..." />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+        <ErrorState title="Failed to load comparison" message={error} onRetry={() => window.location.reload()} />
+      </div>
+    );
+  }
+
+  const frontendJobs = jobs.map(convertToFrontendJob);
+  const targetJob = frontendJobs[0] || null;
+  const compareStudents = candidates.map((c) => c.student);
+
+  if (!targetJob || compareStudents.length === 0) {
+    return (
+      <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+        <EmptyState
+          title="No data available for comparison"
+          description="There are no jobs or candidates to compare."
+        />
+      </div>
+    );
+  }
+
+  // Extract comparison skills from job requirements or use common skills
+  const comparisonSkills = targetJob?.requiredSkills.map(s => s.name) || [
     'Java',
     'Spring Boot',
     'REST API',
@@ -53,7 +130,8 @@ export default function CandidateComparisonPage() {
               <tr>
                 <th className="py-4 px-4 font-semibold text-text-muted w-1/4">Evaluation Attribute</th>
                 {compareStudents.map((stu) => {
-                  const match = mockMatchResults.find((m) => m.studentId === stu.id) || mockMatchResults[0];
+                  const candidate = candidates.find((c) => c.student.id === stu.id);
+                  const match = candidate?.matchResult;
                   return (
                     <th key={stu.id} className="py-4 px-4 font-bold text-text w-1/4">
                       <div className="flex items-center justify-between gap-2">
@@ -76,7 +154,8 @@ export default function CandidateComparisonPage() {
               <tr className="bg-canvas-subtle/40">
                 <td className="py-4 px-4 font-bold text-text">AI Match Score</td>
                 {compareStudents.map((stu) => {
-                  const match = mockMatchResults.find((m) => m.studentId === stu.id) || mockMatchResults[0];
+                  const candidate = candidates.find((c) => c.student.id === stu.id);
+                  const match = candidate?.matchResult;
                   return (
                     <td key={stu.id} className="py-4 px-4">
                       <MatchScore score={match.overallScore} confidence={match.confidenceScore} size="sm" />
@@ -131,7 +210,8 @@ export default function CandidateComparisonPage() {
                 <tr key={skillName} className="hover:bg-surface-raised/50 transition-base">
                   <td className="py-3 px-4 font-medium text-text">{skillName}</td>
                   {compareStudents.map((stu) => {
-                    const match = mockMatchResults.find((m) => m.studentId === stu.id) || mockMatchResults[0];
+                    const candidate = candidates.find((c) => c.student.id === stu.id);
+                  const match = candidate?.matchResult;
                     const isStrong = match.strongSkills.some((s) => s.name.toLowerCase() === skillName.toLowerCase());
                     const isPartial = match.partialSkills.some((s) => s.name.toLowerCase() === skillName.toLowerCase());
                     const status = isStrong ? 'strong' : isPartial ? 'partial' : 'missing';

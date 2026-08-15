@@ -8,14 +8,57 @@ import { GlassBadge } from '@/components/ui/GlassBadge';
 import { GlassInput } from '@/components/ui/GlassInput';
 import { GlassDialog } from '@/components/ui/GlassDialog';
 import { SkillChip } from '@/components/product/SkillChip';
-import { mockJobs } from '@/data/jobs';
+import { LoadingState, EmptyState, ErrorState } from '@/components/states';
+import {
+  fetchAllJobs,
+  createJob,
+  convertToFrontendJob,
+} from '@/services/placement-api';
+import { fetchJobs } from '@/services/student-api';
 import { formatDate } from '@/lib/utils';
-import type { Job } from '@/types';
+import { useToast } from '@/components/ui/Toast';
+import type { Job, BackendJob } from '@/types/api';
 
 export default function PlacementJobsPage() {
-  const [jobs, setJobs] = useState<Job[]>(mockJobs);
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [step, setStep] = useState(1);
+
+  // Fetch jobs on mount
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const jobsData = await fetchAllJobs({ pageSize: 50 });
+        const frontendJobs = jobsData?.items.map(convertToFrontendJob) || [];
+        setJobs(frontendJobs);
+        setIsLoading(false);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load jobs');
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [toast]);
+
+  if (isLoading) {
+    return (
+      <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+        <LoadingState label="Loading jobs..." />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+        <ErrorState title="Failed to load jobs" message={error} onRetry={() => window.location.reload()} />
+      </div>
+    );
+  }
 
   // Multi-step form state
   const [formData, setFormData] = useState({
@@ -34,43 +77,64 @@ export default function PlacementJobsPage() {
     deadline: '2026-09-30',
   });
 
-  const handleCreate = () => {
-    const newJob: Job = {
-      id: `job-${Date.now()}`,
-      title: formData.title,
-      company: formData.company,
-      location: formData.location || 'Bengaluru, Karnataka',
-      workMode: formData.workMode,
-      jobType: formData.jobType,
-      status: 'published',
-      salary: formData.salary || '₹10–16 LPA',
-      eligibility: {
+  const handleCreate = async () => {
+    try {
+      // Create backend job data
+      const backendJobData = {
+        title: formData.title,
+        company: formData.company,
+        location: formData.location || 'Bengaluru, Karnataka',
+        workMode: formData.workMode.toUpperCase(),
+        jobType: formData.jobType.toUpperCase().replace('-', '_'),
+        salary: formData.salary || '₹10–16 LPA',
         minCgpa: parseFloat(formData.minCgpa) || 7.0,
         maxBacklogs: parseInt(formData.maxBacklogs) || 0,
-        allowedDepartments: formData.allowedDepartments.split(',').map((d) => d.trim()),
+        allowedDepartments: formData.allowedDepartments.split(',').map((d: string) => d.trim()),
         allowedPrograms: ['B.Tech', 'M.Tech'],
-      },
-      requiredSkills: formData.requiredSkills.split(',').map((s, i) => ({
-        id: `sk-${i}-${Date.now()}`,
-        name: s.trim(),
-        category: 'Required',
-      })),
-      preferredSkills: formData.preferredSkills.split(',').map((s, i) => ({
-        id: `sk-pref-${i}-${Date.now()}`,
-        name: s.trim(),
-        category: 'Preferred',
-      })),
-      responsibilities: ['Develop scalable backend services', 'Write clean unit tests'],
-      description: formData.description || 'Full-time campus placement role.',
-      postedAt: new Date().toISOString().split('T')[0],
-      deadline: formData.deadline,
-      applicationCount: 0,
-      shortlistedCount: 0,
-    };
+        description: formData.description || 'Full-time campus placement role.',
+        deadline: formData.deadline,
+        requirements: [
+          ...formData.requiredSkills.split(',').map((s: string) => ({
+            label: s.trim(),
+            required: true,
+            weight: 1.0,
+            type: 'SKILL',
+          })),
+          ...formData.preferredSkills.split(',').map((s: string) => ({
+            label: s.trim(),
+            required: false,
+            weight: 0.5,
+            type: 'SKILL',
+          })),
+        ],
+      };
 
-    setJobs([newJob, ...jobs]);
-    setIsWizardOpen(false);
-    setStep(1);
+      const newBackendJob = await createJob(backendJobData);
+      const newJob = convertToFrontendJob(newBackendJob);
+      
+      setJobs([newJob, ...jobs]);
+      setIsWizardOpen(false);
+      setStep(1);
+      setFormData({
+        company: '',
+        title: '',
+        location: '',
+        workMode: 'hybrid',
+        jobType: 'full-time',
+        salary: '',
+        minCgpa: '7.5',
+        maxBacklogs: '0',
+        allowedDepartments: 'Computer Science, Information Technology',
+        requiredSkills: 'Java, Spring Boot, REST API, SQL',
+        preferredSkills: 'Docker, AWS',
+        description: '',
+        deadline: '2026-09-30',
+      });
+      toast('Job created successfully', 'success');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to create job';
+      toast(message, 'error');
+    }
   };
 
   return (
