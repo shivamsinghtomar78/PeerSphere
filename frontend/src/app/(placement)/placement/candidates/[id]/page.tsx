@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, use } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { GlassBadge, EligibilityBadge } from '@/components/ui/GlassBadge';
@@ -10,28 +10,151 @@ import { MatchScore, ConfidenceBadge } from '@/components/product/MatchScore';
 import { ResumeComparison } from '@/components/product/ResumeComparison';
 import { SkillChip } from '@/components/product/SkillChip';
 import { HumanReviewBanner } from '@/components/product/HumanReviewBanner';
-import { mockStudents } from '@/data/students';
-import { mockJobs } from '@/data/jobs';
-import { mockMatchResults, mockSkillGaps } from '@/data/index';
+import { LoadingState, EmptyState, ErrorState } from '@/components/states';
+import {
+  fetchStudentById,
+  fetchAllJobs,
+  fetchEvaluationsByJobId,
+  fetchApplicationsByJobId,
+  updateApplicationStatus,
+  convertToFrontendStudent,
+  convertToFrontendJob,
+  fetchCandidatesForJob,
+} from '@/services/placement-api';
+import type { BackendStudent, BackendJob, BackendEvaluation, BackendApplication } from '@/types/api';
+import type { Student, Job, Candidate, MatchResult } from '@/types';
 import { formatCgpa } from '@/lib/utils';
 
-export default function CandidateDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const resolvedParams = use(params);
-  const student = mockStudents.find((s) => s.id === resolvedParams.id);
+export default function CandidateDetailPage() {
+  const params = useParams();
+  const studentId = params?.id as string;
+  
+  const [student, setStudent] = useState<Student | null>(null);
+  const [job, setJob] = useState<Job | null>(null);
+  const [matchResult, setMatchResult] = useState<MatchResult | null>(null);
   const [shortlisted, setShortlisted] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch data on mount
+  useEffect(() => {
+    if (!studentId) return;
+
+    const fetchData = async () => {
+      try {
+        // Fetch student data
+        const backendStudent = await fetchStudentById(studentId);
+        const frontendStudent = convertToFrontendStudent(backendStudent);
+        setStudent(frontendStudent);
+
+        // Fetch jobs and find one that has this student as a candidate
+        const jobsData = await fetchAllJobs({ pageSize: 20, status: 'PUBLISHED' });
+        const frontendJobs = jobsData?.items.map(convertToFrontendJob) || [];
+        
+        // For now, use the first job or find one with applications
+        if (frontendJobs.length > 0) {
+          setJob(frontendJobs[0]);
+          
+          // Try to find evaluations for this student and job
+          const jobId = frontendJobs[0].id;
+          const evalsData = await fetchEvaluationsByJobId(jobId, { pageSize: 50 });
+          const studentEval = evalsData?.items.find((e) => e.studentId === studentId);
+          
+          if (studentEval) {
+            const mr: MatchResult = {
+              jobId: studentEval.jobVersion?.jobId || jobId,
+              studentId: studentEval.studentId,
+              overallScore: studentEval.overallScore || 0,
+              confidenceScore: studentEval.confidenceScore || 0,
+              eligibilityStatus: studentEval.eligibility as any,
+              coveragePercent: studentEval.coveragePercent || 0,
+              strongSkills: [],
+              partialSkills: [],
+              missingSkills: [],
+              matchSummary: studentEval.matchSummary || '',
+              analysisVersion: '2.1.0',
+              generatedAt: studentEval.updatedAt,
+              requiresHumanReview: studentEval.requiresReview,
+            };
+            setMatchResult(mr);
+          }
+          
+          // Check if student is shortlisted for this job
+          const appsData = await fetchApplicationsByJobId(jobId, { pageSize: 50 });
+          const studentApp = appsData?.items.find((a) => a.studentId === studentId);
+          if (studentApp) {
+            setShortlisted(studentApp.status === 'shortlisted');
+          }
+        }
+
+        setIsLoading(false);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load candidate details');
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [studentId]);
+
+  if (!studentId) {
+    return (
+      <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-5xl mx-auto">
+        <EmptyState
+          title="No candidate ID"
+          description="Please provide a valid candidate ID."
+        />
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-5xl mx-auto">
+        <LoadingState label="Loading candidate details..." />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-5xl mx-auto">
+        <ErrorState title="Failed to load candidate" message={error} onRetry={() => window.location.reload()} />
+      </div>
+    );
+  }
 
   if (!student) {
     notFound();
   }
 
-  const job = mockJobs[0];
-  const matchResult =
-    mockMatchResults.find((m) => m.studentId === student.id && m.jobId === job.id) ||
-    mockMatchResults[0];
+  if (!job) {
+    return (
+      <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-5xl mx-auto">
+        <EmptyState
+          title="No job found for candidate"
+          description="This candidate has not applied to any jobs yet."
+        />
+      </div>
+    );
+  }
+
+  // If no match result, create a default one
+  const displayMatchResult = matchResult || {
+    jobId: job.id,
+    studentId: student.id,
+    overallScore: 0,
+    confidenceScore: 0,
+    eligibilityStatus: 'pending' as const,
+    coveragePercent: 0,
+    strongSkills: [],
+    partialSkills: [],
+    missingSkills: [],
+    matchSummary: '',
+    analysisVersion: '2.1.0',
+    generatedAt: new Date().toISOString(),
+    requiresHumanReview: false,
+  };
 
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-5xl mx-auto">
