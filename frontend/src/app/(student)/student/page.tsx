@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { GlassButton } from '@/components/ui/GlassButton';
@@ -8,15 +8,154 @@ import { GlassBadge, EligibilityBadge } from '@/components/ui/GlassBadge';
 import { StatCard } from '@/components/product/StatCard';
 import { MatchScore } from '@/components/product/MatchScore';
 import { SkillChip } from '@/components/product/SkillChip';
-import { currentStudent } from '@/data/students';
-import { mockJobs } from '@/data/jobs';
-import { mockApplications, mockSkillGaps, mockRecommendations, mockMatchResults } from '@/data/index';
+import {
+  fetchDashboardData,
+  getPrimaryMatch,
+  extractSkillGapsFromEvaluations,
+  getRecentApplications,
+  getRecommendedJobs,
+  convertToFrontendStudent,
+  convertToFrontendJob,
+  convertToFrontendApplication,
+} from '@/services/student-api';
+import type { BackendStudent, BackendJob, BackendApplication, BackendEvaluation } from '@/types/api';
+import type { Student, Job, Application, MatchResult, SkillGap, Recommendation } from '@/types';
 
 export default function StudentDashboardPage() {
-  const student = currentStudent;
-  const primaryMatch = mockMatchResults[0]; // e.g. for ABC Tech backend role
-  const recommendedJobs = mockJobs.slice(0, 3);
-  const highPriorityGaps = mockSkillGaps.filter((g) => g.priority === 'high');
+  const [dashboardData, setDashboardData] = useState<{
+    student: Student | null;
+    applications: Application[];
+    evaluations: BackendEvaluation[];
+    backendJobs: BackendJob[];
+    frontendJobs: Job[];
+    isLoading: boolean;
+    error: string | null;
+  }>({
+    student: null,
+    applications: [],
+    evaluations: [],
+    backendJobs: [],
+    frontendJobs: [],
+    isLoading: true,
+    error: null,
+  });
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const result = await fetchDashboardData();
+        
+        if (result.error) {
+          setDashboardData((prev) => ({ ...prev, error: result.error, isLoading: false }));
+          return;
+        }
+
+        // Convert backend data to frontend types
+        const student = result.profile ? convertToFrontendStudent(result.profile) : null;
+        const backendJobs = result.jobs?.items || [];
+        const frontendJobs = backendJobs.map(convertToFrontendJob);
+        const applications = result.applications?.items.map(convertToFrontendApplication) || [];
+        const evaluations = result.evaluations?.items || [];
+
+        setDashboardData({
+          student,
+          applications,
+          evaluations,
+          backendJobs,
+          frontendJobs,
+          isLoading: false,
+          error: null,
+        });
+      } catch (err) {
+        setDashboardData((prev) => ({
+          ...prev,
+          error: err instanceof Error ? err.message : 'Failed to load dashboard data',
+          isLoading: false,
+        }));
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // Derived data
+  const { student, applications, evaluations, backendJobs, frontendJobs, isLoading, error } = dashboardData;
+  const primaryMatch = getPrimaryMatch(evaluations);
+  const recommendedJobs = getRecommendedJobs(backendJobs);
+  const recentApplications = getRecentApplications(applications);
+  const skillGaps = extractSkillGapsFromEvaluations(evaluations);
+  const highPriorityGaps = skillGaps.filter((g) => g.priority === 'high');
+  
+  // Convert recommended backend jobs to frontend jobs for display
+  const recommendedFrontendJobs = recommendedJobs.map(convertToFrontendJob);
+
+  // Create MatchResult from primary evaluation
+  const matchResult: MatchResult | null = primaryMatch
+    ? {
+        jobId: primaryMatch.jobVersion?.jobId || '',
+        studentId: primaryMatch.studentId,
+        overallScore: primaryMatch.overallScore || 0,
+        confidenceScore: primaryMatch.confidenceScore || 0,
+        eligibilityStatus: primaryMatch.eligibility as any,
+        coveragePercent: primaryMatch.coveragePercent || 0,
+        strongSkills: [],
+        partialSkills: [],
+        missingSkills: [],
+        matchSummary: primaryMatch.matchSummary || '',
+        analysisVersion: '2.1.0',
+        generatedAt: primaryMatch.updatedAt,
+        requiresHumanReview: primaryMatch.requiresReview,
+      }
+    : null;
+
+  // Get primary recommendation from skill gaps
+  const primaryRecommendation: Recommendation | null = skillGaps.length > 0
+    ? {
+        id: 'rec-001',
+        studentId: student?.id || '',
+        jobId: primaryMatch?.jobVersion?.jobId || '',
+        skill: highPriorityGaps[0]?.skill || { id: '', name: '', category: '' },
+        priority: highPriorityGaps[0]?.priority || 'high',
+        currentMatchScore: matchResult?.overallScore || 0,
+        projectedMatchScore: (matchResult?.overallScore || 0) + (highPriorityGaps[0]?.potentialMatchImprovement || 0),
+        estimatedTimeWeeks: highPriorityGaps[0]?.steps?.length || 5,
+        steps: highPriorityGaps[0]?.steps || [],
+        resources: [],
+      }
+    : null;
+
+  if (isLoading) {
+    return (
+      <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+        <div className="text-center py-12">
+          <p className="text-text-muted">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+        <div className="text-center py-12">
+          <p className="text-text-danger">Error: {error}</p>
+          <GlassButton variant="primary" size="sm" className="mt-4" onClick={() => window.location.reload()}>
+            Retry
+          </GlassButton>
+        </div>
+      </div>
+    );
+  }
+
+  if (!student) {
+    return (
+      <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+        <div className="text-center py-12">
+          <p className="text-text-muted">No student profile found</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
@@ -55,19 +194,19 @@ export default function StudentDashboardPage() {
         />
         <StatCard
           label="Active Applications"
-          value={mockApplications.length}
-          subtext="1 Under Review, 1 Shortlisted"
+          value={recentApplications.length}
+          subtext={`${recentApplications.filter((a) => a.status === 'under_review').length} Under Review, ${recentApplications.filter((a) => a.status === 'shortlisted').length} Shortlisted`}
         />
         <StatCard
           label="High Priority Skill Gaps"
           value={highPriorityGaps.length}
-          delta="Spring Boot, REST API"
+          delta={highPriorityGaps.map(g => g.skill.name).join(', ')}
           deltaType="negative"
           subtext="Actionable in 4 weeks"
         />
         <StatCard
           label="Target Roles Eligible"
-          value="4 of 5"
+          value={`${recommendedFrontendJobs.length} of ${frontendJobs.length}`}
           deltaType="positive"
           subtext="Eligibility verified"
         />
@@ -76,72 +215,74 @@ export default function StudentDashboardPage() {
       {/* Apple Bento Grid Section */}
       <div className="bento-grid">
         {/* Bento Item 1: Top Job Match (Span 7 col) */}
-        <GlassCard
-          variant="surface"
-          padding="md"
-          className="col-span-12 lg:col-span-7 flex flex-col justify-between"
-        >
-          <div>
-            <div className="flex items-center justify-between gap-2 mb-3">
-              <span className="text-caption font-semibold uppercase tracking-wider text-accent">
-                Top Recommendation
-              </span>
-              <EligibilityBadge status={primaryMatch.eligibilityStatus} />
-            </div>
-
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h3 className="text-lg font-bold text-text hover:text-accent transition-base">
-                  <Link href={`/student/jobs/${recommendedJobs[0].id}`}>
-                    {recommendedJobs[0].title}
-                  </Link>
-                </h3>
-                <p className="text-sm text-text-muted">
-                  {recommendedJobs[0].company} • {recommendedJobs[0].location} ({recommendedJobs[0].workMode})
-                </p>
-                <div className="mt-2 text-xs font-semibold text-text tabular">
-                  {recommendedJobs[0].salary}
-                </div>
+        {recommendedFrontendJobs.length > 0 && matchResult && (
+          <GlassCard
+            variant="surface"
+            padding="md"
+            className="col-span-12 lg:col-span-7 flex flex-col justify-between"
+          >
+            <div>
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <span className="text-caption font-semibold uppercase tracking-wider text-accent">
+                  Top Recommendation
+                </span>
+                <EligibilityBadge status={matchResult.eligibilityStatus} />
               </div>
 
-              <MatchScore
-                score={primaryMatch.overallScore}
-                confidence={primaryMatch.confidenceScore}
-                size="md"
-                showDetails={false}
-              />
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h3 className="text-lg font-bold text-text hover:text-accent transition-base">
+                    <Link href={`/student/jobs/${recommendedFrontendJobs[0].id}`}>
+                      {recommendedFrontendJobs[0].title}
+                    </Link>
+                  </h3>
+                  <p className="text-sm text-text-muted">
+                    {recommendedFrontendJobs[0].company} • {recommendedFrontendJobs[0].location} ({recommendedFrontendJobs[0].workMode})
+                  </p>
+                  <div className="mt-2 text-xs font-semibold text-text tabular">
+                    {recommendedFrontendJobs[0].salary}
+                  </div>
+                </div>
+
+                <MatchScore
+                  score={matchResult.overallScore}
+                  confidence={matchResult.confidenceScore}
+                  size="md"
+                  showDetails={false}
+                />
+              </div>
+
+              {/* Match explanation excerpt */}
+              <p className="mt-4 text-xs text-text-muted bg-canvas-subtle p-3 rounded-md border border-border-subtle leading-relaxed">
+                {matchResult.matchSummary}
+              </p>
+
+              {/* Skills breakdown chip preview */}
+              <div className="mt-4 flex flex-wrap gap-1.5 items-center">
+                <span className="text-caption text-text-faint font-medium mr-1">Matching:</span>
+                {matchResult.strongSkills.map((sk) => (
+                  <SkillChip key={sk.id} skill={sk} status="strong" size="sm" />
+                ))}
+                {matchResult.missingSkills.map((sk) => (
+                  <SkillChip key={sk.id} skill={sk} status="missing" size="sm" />
+                ))}
+              </div>
             </div>
 
-            {/* Match explanation excerpt */}
-            <p className="mt-4 text-xs text-text-muted bg-canvas-subtle p-3 rounded-md border border-border-subtle leading-relaxed">
-              {primaryMatch.matchSummary}
-            </p>
-
-            {/* Skills breakdown chip preview */}
-            <div className="mt-4 flex flex-wrap gap-1.5 items-center">
-              <span className="text-caption text-text-faint font-medium mr-1">Matching:</span>
-              {primaryMatch.strongSkills.map((sk) => (
-                <SkillChip key={sk.id} skill={sk} status="strong" size="sm" />
-              ))}
-              {primaryMatch.missingSkills.map((sk) => (
-                <SkillChip key={sk.id} skill={sk} status="missing" size="sm" />
-              ))}
+            <div className="mt-6 pt-3 border-t border-border-subtle flex items-center justify-between gap-3">
+              <Link href={`/student/match?jobId=${recommendedFrontendJobs[0].id}`}>
+                <GlassButton variant="secondary" size="sm">
+                  View Full Match Breakdown
+                </GlassButton>
+              </Link>
+              <Link href={`/student/jobs/${recommendedFrontendJobs[0].id}`}>
+                <GlassButton variant="primary" size="sm">
+                  Apply Now
+                </GlassButton>
+              </Link>
             </div>
-          </div>
-
-          <div className="mt-6 pt-3 border-t border-border-subtle flex items-center justify-between gap-3">
-            <Link href={`/student/match?jobId=${recommendedJobs[0].id}`}>
-              <GlassButton variant="secondary" size="sm">
-                View Full Match Breakdown
-              </GlassButton>
-            </Link>
-            <Link href={`/student/jobs/${recommendedJobs[0].id}`}>
-              <GlassButton variant="primary" size="sm">
-                Apply Now
-              </GlassButton>
-            </Link>
-          </div>
-        </GlassCard>
+          </GlassCard>
+        )}
 
         {/* Bento Item 2: Skill Gaps Action Summary (Span 5 col) */}
         <GlassCard
@@ -153,11 +294,11 @@ export default function StudentDashboardPage() {
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-title text-text font-bold">Skill Gaps to Close</h3>
               <Link href="/student/skill-gaps" className="text-caption text-accent hover:underline">
-                View All ({mockSkillGaps.length})
+                View All ({skillGaps.length})
               </Link>
             </div>
             <p className="text-xs text-text-muted mb-4">
-              Closing these high-impact gaps unlocks up to <strong className="text-success">+22%</strong> match lift.
+              Closing these high-impact gaps unlocks up to <strong className="text-success">+{highPriorityGaps.reduce((sum, g) => sum + (g.potentialMatchImprovement || 0), 0)}%</strong> match lift.
             </p>
 
             <div className="space-y-3">
@@ -195,42 +336,44 @@ export default function StudentDashboardPage() {
         </GlassCard>
 
         {/* Bento Item 3: Active Improvement Roadmap (Span 6 col) */}
-        <GlassCard
-          variant="surface"
-          padding="md"
-          className="col-span-12 lg:col-span-6 flex flex-col justify-between"
-        >
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-title text-text font-bold">Active Improvement Track</h3>
-              <GlassBadge variant="accent" size="sm">
-                Week 2 of 5
-              </GlassBadge>
-            </div>
-            <p className="text-xs text-text-muted mb-4">
-              Current focus: <strong className="text-text">{mockRecommendations[0].skill.name}</strong> fundamentals and CRUD API construction.
-            </p>
+        {primaryRecommendation && (
+          <GlassCard
+            variant="surface"
+            padding="md"
+            className="col-span-12 lg:col-span-6 flex flex-col justify-between"
+          >
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-title text-text font-bold">Active Improvement Track</h3>
+                <GlassBadge variant="accent" size="sm">
+                  Week 2 of 5
+                </GlassBadge>
+              </div>
+              <p className="text-xs text-text-muted mb-4">
+                Current focus: <strong className="text-text">{primaryRecommendation.skill.name}</strong> fundamentals and CRUD API construction.
+              </p>
 
-            {/* Step list */}
-            <div className="space-y-2 relative before:absolute before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-border-subtle">
-              {mockRecommendations[0].steps.slice(0, 3).map((step, idx) => (
-                <div key={idx} className="flex items-center gap-3 relative z-10">
-                  <span className="w-6 h-6 rounded-full bg-surface border border-border flex items-center justify-center text-xs font-bold text-accent shrink-0 tabular">
-                    {idx + 1}
-                  </span>
-                  <span className="text-xs text-text font-medium">{step}</span>
-                </div>
-              ))}
+              {/* Step list */}
+              <div className="space-y-2 relative before:absolute before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-border-subtle">
+                {primaryRecommendation.steps.slice(0, 3).map((step, idx) => (
+                  <div key={idx} className="flex items-center gap-3 relative z-10">
+                    <span className="w-6 h-6 rounded-full bg-surface border border-border flex items-center justify-center text-xs font-bold text-accent shrink-0 tabular">
+                      {idx + 1}
+                    </span>
+                    <span className="text-xs text-text font-medium">{step}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
 
-          <div className="mt-4 pt-3 border-t border-border-subtle flex items-center justify-between text-xs text-text-muted">
-            <span>Projected Readiness Lift: 72% → 86%</span>
-            <Link href="/student/recommendations" className="text-accent hover:underline font-medium">
-              Full Roadmap
-            </Link>
-          </div>
-        </GlassCard>
+            <div className="mt-4 pt-3 border-t border-border-subtle flex items-center justify-between text-xs text-text-muted">
+              <span>Projected Readiness Lift: {matchResult?.overallScore || 0}% → {primaryRecommendation.projectedMatchScore}%</span>
+              <Link href="/student/recommendations" className="text-accent hover:underline font-medium">
+                Full Roadmap
+              </Link>
+            </div>
+          </GlassCard>
+        )}
 
         {/* Bento Item 4: Application Pipeline (Span 6 col) */}
         <GlassCard
@@ -242,13 +385,13 @@ export default function StudentDashboardPage() {
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-title text-text font-bold">Recent Applications</h3>
               <Link href="/student/applications" className="text-caption text-accent hover:underline">
-                View All ({mockApplications.length})
+                View All ({recentApplications.length})
               </Link>
             </div>
 
             <div className="space-y-2.5">
-              {mockApplications.map((app) => {
-                const job = mockJobs.find((j) => j.id === app.jobId);
+              {recentApplications.map((app) => {
+                const job = frontendJobs.find((j) => j.id === app.jobId);
                 if (!job) return null;
                 const statusBadge =
                   app.status === 'shortlisted' ? 'success' : app.status === 'under_review' ? 'warning' : 'default';
@@ -263,7 +406,7 @@ export default function StudentDashboardPage() {
                       <p className="text-xs text-text-muted">{job.company}</p>
                     </div>
                     <GlassBadge variant={statusBadge as any} size="sm">
-                      {app.status === 'under_review' ? 'Under Review' : app.status === 'shortlisted' ? 'Shortlisted' : 'Applied'}
+                      {app.status === 'under_review' ? 'Under Review' : app.status === 'shortlisted' ? 'Shortlisted' : app.status === 'applied' ? 'Applied' : app.status}
                     </GlassBadge>
                   </div>
                 );
@@ -272,7 +415,7 @@ export default function StudentDashboardPage() {
           </div>
 
           <div className="mt-4 pt-3 border-t border-border-subtle flex items-center justify-between">
-            <span className="text-caption text-text-faint">Resume v2.1 active</span>
+            <span className="text-caption text-text-faint">Resume v{student.resumeUpdatedAt ? '2.1' : '1.0'} active</span>
             <Link href="/student/jobs">
               <GlassButton variant="ghost" size="sm">
                 Search More Openings →

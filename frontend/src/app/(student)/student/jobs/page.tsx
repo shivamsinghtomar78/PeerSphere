@@ -1,29 +1,67 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { GlassInput } from '@/components/ui/GlassInput';
 import { GlassTabs } from '@/components/ui/GlassTabs';
 import { JobCard } from '@/components/product/JobCard';
 import { EmptyState } from '@/components/states';
-import { mockJobs } from '@/data/jobs';
-import { mockMatchResults, mockApplications } from '@/data/index';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { fetchJobs, fetchMyApplications, applyToJob, convertToFrontendJob, convertToFrontendApplication } from '@/services/student-api';
+import type { Job, Application, MatchResult } from '@/types';
+import type { BackendJob, BackendApplication } from '@/types/api';
 
 export default function StudentJobsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('all');
-  const [appliedIds, setAppliedIds] = useState<string[]>(
-    mockApplications.map((a) => a.jobId)
-  );
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [matchResults, setMatchResults] = useState<Map<string, MatchResult>>(new Map());
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [jobsResult, appsResult] = await Promise.all([
+          fetchJobs({ pageSize: 50, status: 'PUBLISHED' }),
+          fetchMyApplications({ pageSize: 50 }),
+        ]);
+
+        const frontendJobs = jobsResult.items.map(convertToFrontendJob);
+        const frontendApps = appsResult.items.map(convertToFrontendApplication);
+        
+        // Create match results map from applications
+        const matchesMap = new Map<string, MatchResult>();
+        frontendApps.forEach((app) => {
+          if (app.matchResult) {
+            matchesMap.set(app.jobId, app.matchResult);
+          }
+        });
+
+        setJobs(frontendJobs);
+        setApplications(frontendApps);
+        setMatchResults(matchesMap);
+        setIsLoading(false);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load jobs');
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const appliedIds = applications.map((a) => a.jobId);
 
   const tabs = [
-    { id: 'all', label: 'All Jobs', badge: mockJobs.length },
+    { id: 'all', label: 'All Jobs', badge: jobs.length },
     { id: 'recommended', label: 'Top Matches (70%+)' },
     { id: 'eligible', label: 'Eligible Only' },
     { id: 'applied', label: 'Applied', badge: appliedIds.length },
   ];
 
   // Filter jobs
-  const filteredJobs = mockJobs.filter((job) => {
+  const filteredJobs = jobs.filter((job) => {
     // Search query filter
     const matchesSearch =
       job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -33,7 +71,7 @@ export default function StudentJobsPage() {
     if (!matchesSearch) return false;
 
     // Tab filter
-    const match = mockMatchResults.find((m) => m.jobId === job.id);
+    const match = matchResults.get(job.id);
 
     if (activeTab === 'recommended') {
       return (match?.overallScore ?? 65) >= 70;
@@ -47,11 +85,49 @@ export default function StudentJobsPage() {
     return true;
   });
 
-  const handleApply = (jobId: string) => {
-    if (!appliedIds.includes(jobId)) {
-      setAppliedIds([...appliedIds, jobId]);
+  const handleApply = async (jobId: string) => {
+    try {
+      const newApp = await applyToJob(jobId);
+      const frontendApp = convertToFrontendApplication(newApp);
+      setApplications([...applications, frontendApp]);
+      
+      // Update match results if available
+      if (frontendApp.matchResult) {
+        setMatchResults(new Map(matchResults.set(jobId, frontendApp.matchResult)));
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to apply to job');
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+        <div className="space-y-4">
+          <Skeleton className="h-8 w-1/3" />
+          <Skeleton className="h-4 w-1/2" />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="h-48 w-full" />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+        <div className="text-center py-12">
+          <p className="text-text-danger">Error: {error}</p>
+          <button onClick={() => window.location.reload()} className="text-accent hover:underline mt-2">
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
@@ -88,14 +164,14 @@ export default function StudentJobsPage() {
       {filteredJobs.length > 0 ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {filteredJobs.map((job) => {
-            const matchResult = mockMatchResults.find((m) => m.jobId === job.id);
+            const matchResult = matchResults.get(job.id);
             const isApplied = appliedIds.includes(job.id);
 
             return (
               <JobCard
                 key={job.id}
                 job={job}
-                matchResult={matchResult}
+                matchResult={matchResult || undefined}
                 viewMode="student"
                 isApplied={isApplied}
                 onApply={handleApply}

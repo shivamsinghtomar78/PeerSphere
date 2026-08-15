@@ -292,7 +292,7 @@ function CredentialsScreen({
   onBack,
 }: CredentialsScreenProps) {
   const meta = ROLE_META[role];
-  const demo = MOCK_CREDENTIALS[role];
+  const demo = DEMO_CREDENTIALS[role];
 
   return (
     <div className="w-full max-w-md space-y-6 animate-in fade-in duration-200">

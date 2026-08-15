@@ -1,16 +1,81 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { GlassBadge } from '@/components/ui/GlassBadge';
 import { MatchScore } from '@/components/product/MatchScore';
-import { mockApplications, mockMatchResults } from '@/data/index';
-import { mockJobs } from '@/data/jobs';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/states';
+import { fetchMyApplications, fetchJobs, convertToFrontendApplication, convertToFrontendJob } from '@/services/student-api';
 import { formatDate, applicationStatusLabel } from '@/lib/utils';
+import type { Job, Application } from '@/types';
 
 export default function StudentApplicationsPage() {
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [jobsMap, setJobsMap] = useState<Map<string, Job>>(new Map());
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [appsResult, jobsResult] = await Promise.all([
+          fetchMyApplications({ pageSize: 50 }),
+          fetchJobs({ pageSize: 50 }),
+        ]);
+
+        const frontendApps = appsResult.items.map(convertToFrontendApplication);
+        const frontendJobs = jobsResult.items.map(convertToFrontendJob);
+        
+        const jobsMap = new Map<string, Job>();
+        frontendJobs.forEach((job) => jobsMap.set(job.id, job));
+
+        setApplications(frontendApps);
+        setJobsMap(jobsMap);
+        setIsLoading(false);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load applications');
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const getStatusBadge = (status: string) => {
+    if (status === 'shortlisted') return 'success';
+    if (status === 'under_review') return 'warning';
+    if (status === 'rejected') return 'danger';
+    return 'default';
+  };
+
+  if (isLoading) {
+    return (
+      <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-6xl mx-auto">
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-32 w-full" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-6xl mx-auto">
+        <div className="text-center py-12">
+          <p className="text-text-danger">Error: {error}</p>
+          <button onClick={() => window.location.reload()} className="text-accent hover:underline mt-2">
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-6xl mx-auto">
       {/* Header */}
@@ -33,79 +98,79 @@ export default function StudentApplicationsPage() {
 
       {/* Applications List */}
       <div className="space-y-4">
-        {mockApplications.map((app) => {
-          const job = mockJobs.find((j) => j.id === app.jobId);
-          if (!job) return null;
+        {applications.length > 0 ? (
+          applications.map((app) => {
+            const job = jobsMap.get(app.jobId);
+            if (!job) return null;
 
-          const matchResult = mockMatchResults.find((m) => m.jobId === job.id);
+            const matchResult = app.matchResult;
+            const statusBadge = getStatusBadge(app.status);
 
-          const statusBadge =
-            app.status === 'shortlisted'
-              ? 'success'
-              : app.status === 'under_review'
-              ? 'warning'
-              : app.status === 'rejected'
-              ? 'danger'
-              : 'default';
+            return (
+              <GlassCard key={app.id} variant="surface" padding="md" className="space-y-4">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div>
+                    <span className="text-caption font-semibold uppercase tracking-wider text-text-muted">
+                      {job.company}
+                    </span>
+                    <h3 className="text-lg font-bold text-text hover:text-accent transition-base">
+                      <Link href={`/student/jobs/${job.id}`}>{job.title}</Link>
+                    </h3>
+                    <div className="flex items-center gap-2 text-caption text-text-muted mt-1 flex-wrap">
+                      <span>Applied: <strong className="text-text">{formatDate(app.appliedAt)}</strong></span>
+                      <span>•</span>
+                      <span>Updated: {formatDate(app.updatedAt)}</span>
+                      <span>•</span>
+                      <span>{job.location}</span>
+                    </div>
+                  </div>
 
-          return (
-            <GlassCard key={app.id} variant="surface" padding="md" className="space-y-4">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                  <span className="text-caption font-semibold uppercase tracking-wider text-text-muted">
-                    {job.company}
-                  </span>
-                  <h3 className="text-lg font-bold text-text hover:text-accent transition-base">
-                    <Link href={`/student/jobs/${job.id}`}>{job.title}</Link>
-                  </h3>
-                  <div className="flex items-center gap-2 text-caption text-text-muted mt-1 flex-wrap">
-                    <span>Applied: <strong className="text-text">{formatDate(app.appliedAt)}</strong></span>
-                    <span>•</span>
-                    <span>Updated: {formatDate(app.updatedAt)}</span>
-                    <span>•</span>
-                    <span>{job.location}</span>
+                  <div className="flex items-center gap-4">
+                    {matchResult && (
+                      <div className="hidden sm:block">
+                        <MatchScore
+                          score={matchResult.overallScore}
+                          confidence={matchResult.confidenceScore}
+                          size="sm"
+                          showDetails={false}
+                        />
+                      </div>
+                    )}
+
+                    <GlassBadge variant={statusBadge as any} size="md" dot>
+                      {applicationStatusLabel(app.status)}
+                    </GlassBadge>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4">
-                  {matchResult && (
-                    <div className="hidden sm:block">
-                      <MatchScore
-                        score={matchResult.overallScore}
-                        confidence={matchResult.confidenceScore}
-                        size="sm"
-                        showDetails={false}
-                      />
-                    </div>
-                  )}
+                <div className="pt-3 border-t border-border-subtle flex items-center justify-between gap-3 flex-wrap">
+                  <span className="text-caption text-text-faint">
+                    Application Reference ID: {app.id}
+                  </span>
 
-                  <GlassBadge variant={statusBadge as any} size="md" dot>
-                    {applicationStatusLabel(app.status)}
-                  </GlassBadge>
+                  <div className="flex items-center gap-2">
+                    <Link href={`/student/match?jobId=${job.id}`}>
+                      <GlassButton variant="ghost" size="sm">
+                        Inspect Match Analysis
+                      </GlassButton>
+                    </Link>
+                    <Link href={`/student/jobs/${job.id}`}>
+                      <GlassButton variant="secondary" size="sm">
+                        View Job Post
+                      </GlassButton>
+                    </Link>
+                  </div>
                 </div>
-              </div>
-
-              <div className="pt-3 border-t border-border-subtle flex items-center justify-between gap-3 flex-wrap">
-                <span className="text-caption text-text-faint">
-                  Application Reference ID: {app.id}
-                </span>
-
-                <div className="flex items-center gap-2">
-                  <Link href={`/student/match?jobId=${job.id}`}>
-                    <GlassButton variant="ghost" size="sm">
-                      Inspect Match Analysis
-                    </GlassButton>
-                  </Link>
-                  <Link href={`/student/jobs/${job.id}`}>
-                    <GlassButton variant="secondary" size="sm">
-                      View Job Post
-                    </GlassButton>
-                  </Link>
-                </div>
-              </div>
-            </GlassCard>
-          );
-        })}
+              </GlassCard>
+            );
+          })
+        ) : (
+          <EmptyState
+            title="No applications yet"
+            description="Browse available campus drives and apply to start your placement journey."
+            action={<Link href="/student/jobs"><GlassButton variant="primary">Browse Jobs</GlassButton></Link>}
+          />
+        )}
       </div>
     </div>
   );
