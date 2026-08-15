@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { prisma } from '../../lib/prisma';
 import { ApiError } from '../../errors/ApiError';
+import { EvaluationStatus } from '@prisma/client';
 import { computeMatch, StudentSkillInput, JobSkillRequirement } from '../../engines/matching.engine';
 import { checkEligibility } from '../../engines/eligibility.engine';
 import { analyzeSkillGaps } from '../../engines/skillgap.engine';
@@ -188,4 +189,73 @@ export async function listJobEvaluations(jobId: string) {
       jobVersion: { select: { id: true, title: true, company: true, version: true } },
     },
   });
+}
+
+/**
+ * Returns ALL paginated evaluations for PLACEMENT_ADMIN with full details.
+ */
+export async function listAllEvaluations(
+  query: { status?: string; page?: number; pageSize?: number },
+) {
+  const page = Math.max(1, query.page ?? 1);
+  const pageSize = Math.min(100, Math.max(1, query.pageSize ?? 20));
+  const skip = (page - 1) * pageSize;
+
+  const where: {
+    status?: EvaluationStatus;
+  } = {};
+
+  if (query.status) {
+    if (query.status in EvaluationStatus) {
+      where.status = query.status as EvaluationStatus;
+    } else {
+      throw ApiError.badRequest(`Invalid status filter: ${query.status}`);
+    }
+  }
+
+  const [total, evaluations] = await Promise.all([
+    prisma.evaluation.count({ where }),
+    prisma.evaluation.findMany({
+      where,
+      skip,
+      take: pageSize,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        student: {
+          select: {
+            id: true,
+            name: true,
+            rollNumber: true,
+            department: true,
+            program: true,
+            cgpa: true,
+          },
+        },
+        jobVersion: {
+          select: {
+            id: true,
+            title: true,
+            company: true,
+            version: true,
+            jobId: true,
+          },
+        },
+        requirementMatches: {
+          include: {
+            skill: true,
+            requirement: true,
+          },
+        },
+        recommendations: true,
+      },
+    }),
+  ]);
+
+  return {
+    items: evaluations,
+    total,
+    page,
+    pageSize,
+    hasNext: skip + pageSize < total,
+  };
 }

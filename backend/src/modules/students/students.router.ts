@@ -9,10 +9,12 @@ import {
   addSkill,
   removeSkill,
   listSkills,
+  listStudents,
   getStudentByUserId,
+  getStudentById,
 } from './students.service';
 
-export { getStudentByUserId };
+export { getStudentByUserId, getStudentById };
 
 const router = Router();
 
@@ -129,6 +131,57 @@ router.delete(
       const { id: studentId } = await getStudentByUserId(req.user!.userId);
       await removeSkill(studentId, skillId);
       res.json({ success: true, data: null });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// ─── Validation schemas for list ─────────────────────────────────────────
+
+const listStudentsSchema = z.object({
+  page: z.coerce.number().int().min(1).optional(),
+  pageSize: z.coerce.number().int().min(1).max(100).optional(),
+  search: z.string().trim().optional(),
+  department: z.string().trim().optional(),
+});
+
+// ─── GET /students (PLACEMENT_ADMIN only) ─────────────────────────────────
+
+/**
+ * GET /students
+ * List all students with pagination and filtering.
+ */
+router.get(
+  '/',
+  authenticate,
+  requireRole('PLACEMENT_ADMIN'),
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      const query = listStudentsSchema.parse(req.query);
+      const data = await listStudents(query);
+      res.json({ success: true, data });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// ─── GET /students/:id (PLACEMENT_ADMIN only) ───────────────────────────────
+
+/**
+ * GET /students/:id
+ * Get a single student by ID.
+ */
+router.get(
+  '/:id',
+  authenticate,
+  requireRole('PLACEMENT_ADMIN'),
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+      const data = await getStudentById(id);
+      res.json({ success: true, data });
     } catch (err) {
       next(err);
     }

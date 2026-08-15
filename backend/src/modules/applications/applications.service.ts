@@ -319,6 +319,72 @@ export async function updateApplicationStatus(
 }
 
 /**
+ * Returns ALL paginated applications for PLACEMENT_ADMIN with full details.
+ */
+export async function listAllApplications(
+  query: { status?: string; page?: number; pageSize?: number },
+) {
+  const page = Math.max(1, query.page ?? 1);
+  const pageSize = Math.min(100, Math.max(1, query.pageSize ?? 20));
+  const skip = (page - 1) * pageSize;
+
+  const where: { status?: ApplicationStatus } = {};
+
+  if (query.status) {
+    if (!(query.status in ApplicationStatus)) {
+      throw ApiError.badRequest(`Invalid status filter: ${query.status}`);
+    }
+    where.status = query.status as ApplicationStatus;
+  }
+
+  const [total, applications] = await Promise.all([
+    prisma.application.count({ where }),
+    prisma.application.findMany({
+      where,
+      skip,
+      take: pageSize,
+      orderBy: { appliedAt: 'desc' },
+      include: {
+        student: {
+          select: {
+            id: true,
+            name: true,
+            rollNumber: true,
+            department: true,
+            program: true,
+            year: true,
+            cgpa: true,
+            activeBacklogs: true,
+          },
+        },
+        job: {
+          include: {
+            versions: {
+              orderBy: { version: 'desc' },
+              take: 1,
+              select: {
+                id: true,
+                title: true,
+                company: true,
+                deadline: true,
+              },
+            },
+          },
+        },
+      },
+    }),
+  ]);
+
+  return {
+    items: applications,
+    total,
+    page,
+    pageSize,
+    hasNext: skip + pageSize < total,
+  };
+}
+
+/**
  * Returns paginated applications for a job with student details and match scores.
  * For PLACEMENT_ADMIN use.
  */

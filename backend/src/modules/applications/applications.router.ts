@@ -19,6 +19,12 @@ const listJobApplicationsQuerySchema = z.object({
   pageSize: z.coerce.number().int().min(1).max(100).optional(),
 });
 
+const listAllApplicationsQuerySchema = z.object({
+  status: z.string().optional(),
+  page: z.coerce.number().int().min(1).optional(),
+  pageSize: z.coerce.number().int().min(1).max(100).optional(),
+});
+
 // ─── Routes ───────────────────────────────────────────────────────────────────
 
 /**
@@ -95,6 +101,25 @@ router.get(
 );
 
 /**
+ * GET /applications
+ * Returns all paginated applications (PLACEMENT_ADMIN only).
+ */
+router.get(
+  '/applications',
+  authenticate,
+  requireRole('PLACEMENT_ADMIN'),
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      const query = listAllApplicationsQuerySchema.parse(req.query);
+      const result = await applicationsService.listAllApplications(query);
+      res.json({ success: true, data: result });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+/**
  * GET /jobs/:jobId/applications
  * Returns paginated applications for a job (PLACEMENT_ADMIN only).
  */
@@ -116,8 +141,37 @@ router.get(
 );
 
 /**
+ * PATCH /applications/:id
+ * Updates the status of an application (PLACEMENT_ADMIN only).
+ * This matches the frontend API expectation.
+ */
+router.patch(
+  '/applications/:id',
+  authenticate,
+  requireRole('PLACEMENT_ADMIN'),
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+      const { status, notes } = updateStatusSchema.parse(req.body);
+      const actorId = req.user!.userId;
+
+      const application = await applicationsService.updateApplicationStatus(
+        id,
+        status,
+        actorId,
+        notes,
+      );
+      res.json({ success: true, data: application });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+/**
  * PATCH /applications/:id/status
  * Updates the status of an application (PLACEMENT_ADMIN only).
+ * Legacy endpoint - kept for backwards compatibility.
  */
 router.patch(
   '/applications/:id/status',

@@ -219,3 +219,109 @@ export async function listSkills(studentId: string) {
     orderBy: { createdAt: 'asc' },
   });
 }
+
+// ─── Pagination types ─────────────────────────────────────────────────────
+
+export interface ListStudentsParams {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  department?: string;
+}
+
+export interface PaginatedStudents {
+  items: any[];
+  total: number;
+  page: number;
+  pageSize: number;
+  hasNext: boolean;
+}
+
+/**
+ * Get a single student by ID (PLACEMENT_ADMIN only)
+ */
+export async function getStudentById(studentId: string) {
+  const student = await prisma.student.findUnique({
+    where: { id: studentId },
+    include: {
+      user: {
+        select: { email: true },
+      },
+      skillEvidence: {
+        include: {
+          skill: {
+            select: {
+              id: true,
+              canonicalName: true,
+              category: true,
+            },
+          },
+        },
+      },
+      resumeVersions: {
+        where: { deletedAt: null },
+        orderBy: { createdAt: 'desc' },
+      },
+    },
+  });
+
+  if (!student) throw ApiError.notFound('Student');
+  return student;
+}
+
+/**
+ * List all students (PLACEMENT_ADMIN only)
+ */
+export async function listStudents(params: ListStudentsParams): Promise<PaginatedStudents> {
+  const { page = 1, pageSize = 20, search, department } = params;
+  const skip = (page - 1) * pageSize;
+
+  const where: any = {};
+  
+  if (department) {
+    where.department = { contains: department, mode: 'insensitive' };
+  }
+
+  if (search) {
+    where.OR = [
+      { name: { contains: search, mode: 'insensitive' } },
+      { rollNumber: { contains: search, mode: 'insensitive' } },
+      { email: { contains: search, mode: 'insensitive' } },
+    ];
+  }
+
+  const [items, total] = await Promise.all([
+    prisma.student.findMany({
+      where,
+      include: {
+        user: {
+          select: { email: true },
+        },
+        skillEvidence: {
+          include: {
+            skill: {
+              select: { id: true, canonicalName: true, category: true },
+            },
+          },
+        },
+        resumeVersions: {
+          where: { deletedAt: null },
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
+      },
+      orderBy: { name: 'asc' },
+      skip,
+      take: pageSize,
+    }),
+    prisma.student.count({ where }),
+  ]);
+
+  return {
+    items,
+    total,
+    page,
+    pageSize,
+    hasNext: skip + pageSize < total,
+  };
+}

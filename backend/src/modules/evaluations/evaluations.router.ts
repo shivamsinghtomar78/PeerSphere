@@ -8,13 +8,57 @@ import { getStudentByUserId } from '../students/students.router';
 
 const router = Router();
 
-// ─── POST /jobs/:jobId/evaluations ───────────────────────────────────────────
-// STUDENT: queues an evaluation for themselves
-// PLACEMENT_ADMIN: queues an evaluation for any student via body.studentId
+// ─── Validation schemas ───────────────────────────────────────────────────────
 
 const queueBodySchema = z.object({
   studentId: z.string().uuid().optional(),
 });
+
+const queueEvaluationSchema = z.object({
+  studentId: z.string().uuid(),
+  jobId: z.string().uuid(),
+});
+
+const listAllEvaluationsQuerySchema = z.object({
+  status: z.string().optional(),
+  page: z.coerce.number().int().min(1).optional(),
+  pageSize: z.coerce.number().int().min(1).max(100).optional(),
+});
+
+// ─── POST /evaluations/queue ────────────────────────────────────────────────
+// Queue an evaluation for a student and job
+
+router.post(
+  '/evaluations/queue',
+  authenticate,
+  requireRole('STUDENT', 'PLACEMENT_ADMIN'),
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      const body = queueEvaluationSchema.parse(req.body);
+      
+      let studentId: string;
+      
+      if (req.user!.role === 'STUDENT') {
+        // Students can only queue for themselves
+        const student = await getStudentByUserId(req.user!.userId);
+        if (!student) throw ApiError.notFound('Student profile');
+        studentId = student.id;
+      } else {
+        // PLACEMENT_ADMIN can queue for any student
+        studentId = body.studentId;
+      }
+      
+      const evaluation = await evaluationsService.queueEvaluation(studentId, body.jobId);
+      res.status(201).json({ success: true, data: evaluation });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// ─── POST /jobs/:jobId/evaluations ───────────────────────────────────────────
+// STUDENT: queues an evaluation for themselves
+// PLACEMENT_ADMIN: queues an evaluation for any student via body.studentId
 
 router.post(
   '/jobs/:jobId/evaluations',
@@ -42,6 +86,24 @@ router.post(
 
       const evaluation = await evaluationsService.queueEvaluation(studentId, jobId);
       res.status(201).json({ success: true, data: evaluation });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// ─── GET /evaluations ───────────────────────────────────────────────
+// PLACEMENT_ADMIN only — list all evaluations with pagination
+
+router.get(
+  '/evaluations',
+  authenticate,
+  requireRole('PLACEMENT_ADMIN'),
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      const query = listAllEvaluationsQuerySchema.parse(req.query);
+      const evaluations = await evaluationsService.listAllEvaluations(query);
+      res.json({ success: true, data: evaluations });
     } catch (err) {
       next(err);
     }
