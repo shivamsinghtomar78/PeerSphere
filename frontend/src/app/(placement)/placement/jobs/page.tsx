@@ -198,11 +198,9 @@ export default function PlacementJobsPage() {
               </div>
 
               <div className="flex items-center gap-2">
-                <Link href="/placement/candidates">
-                  <GlassButton variant="secondary" size="sm">
-                    View Candidates
-                  </GlassButton>
-                </Link>
+                <GlassButton href="/placement/candidates" variant="secondary" size="sm">
+                  View Candidates
+                </GlassButton>
               </div>
             </div>
           </GlassCard>

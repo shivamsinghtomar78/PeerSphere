@@ -35,11 +35,9 @@ export default function PlacementNotFound() {
           </p>
 
           <div className="mt-8">
-            <Link href="/placement" tabIndex={-1}>
-              <GlassButton variant="primary" size="lg" fullWidth>
-                Back to Placement Console
-              </GlassButton>
-            </Link>
+            <GlassButton href="/placement" variant="primary" size="lg" fullWidth tabIndex={-1}>
+              Back to Placement Console
+            </GlassButton>
           </div>
         </GlassCard>
       </div>

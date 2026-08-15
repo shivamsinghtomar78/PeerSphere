@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import { cn } from '@/lib/utils';
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'glass';
@@ -13,6 +14,7 @@ interface GlassButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement>
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
   fullWidth?: boolean;
+  href?: string;
 }
 
 const variantClasses: Record<ButtonVariant, string> = {
@@ -61,6 +63,7 @@ const sizeClasses: Record<ButtonSize, string> = {
  * GlassButton — the primary interactive button.
  * Uses the 'glass' variant for navigation/control chrome.
  * Uses 'primary'/'secondary' for content actions.
+ * Supports href prop to render as a Next.js Link.
  */
 export function GlassButton({
   children,
@@ -71,11 +74,56 @@ export function GlassButton({
   rightIcon,
   fullWidth = false,
   disabled,
+  href,
   className,
   ...props
 }: GlassButtonProps) {
   const isDisabled = disabled || loading;
 
+  // If href is provided, render as a Link
+  if (href) {
+    return (
+      <Link
+        href={href}
+        className={cn(
+          // Base
+          'inline-flex items-center justify-center',
+          'font-medium rounded-sm',
+          'transition-base',
+          'cursor-pointer select-none',
+          // Focus
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+          'focus-visible:ring-[var(--ps-focus)]',
+          // Disabled
+          isDisabled && 'opacity-50 cursor-not-allowed pointer-events-none',
+          // Variant
+          variantClasses[variant],
+          // Size
+          sizeClasses[size],
+          // Width
+          fullWidth && 'w-full',
+          className
+        )}
+        aria-busy={loading}
+        {...props}
+      >
+        {loading ? (
+          <>
+            <LoadingSpinner size={size} />
+            <span>{children}</span>
+          </>
+        ) : (
+          <>
+            {leftIcon && <span className="shrink-0">{leftIcon}</span>}
+            {children && <span>{children}</span>}
+            {rightIcon && <span className="shrink-0">{rightIcon}</span>}
+          </>
+        )}
+      </Link>
+    );
+  }
+
+  // Default: render as a button
   return (
     <button
       disabled={isDisabled}
@@ -142,6 +190,7 @@ interface GlassIconButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElem
   variant?: ButtonVariant;
   size?: ButtonSize;
   loading?: boolean;
+  href?: string;
 }
 
 export function GlassIconButton({
@@ -151,12 +200,38 @@ export function GlassIconButton({
   size = 'md',
   loading = false,
   disabled,
+  href,
   className,
   ...props
 }: GlassIconButtonProps) {
   const isDisabled = disabled || loading;
   const sizeMap = { sm: 'w-8 h-8', md: 'w-10 h-10', lg: 'w-12 h-12' };
 
+  // If href is provided, render as a Link
+  if (href) {
+    return (
+      <Link
+        href={href}
+        aria-label={label}
+        aria-busy={loading}
+        className={cn(
+          'inline-flex items-center justify-center',
+          'rounded-sm transition-base cursor-pointer',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+          'focus-visible:ring-[var(--ps-focus)]',
+          isDisabled && 'opacity-50 cursor-not-allowed pointer-events-none',
+          variantClasses[variant],
+          sizeMap[size],
+          className
+        )}
+        {...props}
+      >
+        {loading ? <LoadingSpinner size={size} /> : children}
+      </Link>
+    );
+  }
+
+  // Default: render as a button
   return (
     <button
       disabled={isDisabled}

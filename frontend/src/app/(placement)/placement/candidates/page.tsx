@@ -153,11 +153,9 @@ export default function CandidateRankingPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          <Link href="/placement/compare">
-            <GlassButton variant="primary" size="md">
-              Compare Top Candidates Matrix →
-            </GlassButton>
-          </Link>
+          <GlassButton href="/placement/compare" variant="primary" size="md">
+            Compare Top Candidates Matrix →
+          </GlassButton>
         </div>
       </div>
 
@@ -286,11 +284,9 @@ export default function CandidateRankingPage() {
 
                   <td className="py-3 px-4 text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <Link href={`/placement/candidates/${cand.student.id}`}>
-                        <GlassButton variant="ghost" size="sm">
-                          Inspect
-                        </GlassButton>
-                      </Link>
+                      <GlassButton href={`/placement/candidates/${cand.student.id}`} variant="ghost" size="sm">
+                        Inspect
+                      </GlassButton>
                       <GlassButton
                         variant={cand.isShortlisted ? 'secondary' : 'primary'}
                         size="sm"

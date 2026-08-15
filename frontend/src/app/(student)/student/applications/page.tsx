@@ -89,11 +89,9 @@ export default function StudentApplicationsPage() {
           </p>
         </div>
 
-        <Link href="/student/jobs">
-          <GlassButton variant="primary" size="md">
-            Browse New Drives
-          </GlassButton>
-        </Link>
+        <GlassButton href="/student/jobs" variant="primary" size="md">
+          Browse New Drives
+        </GlassButton>
       </div>
 
       {/* Applications List */}
@@ -149,16 +147,12 @@ export default function StudentApplicationsPage() {
                   </span>
 
                   <div className="flex items-center gap-2">
-                    <Link href={`/student/match?jobId=${job.id}`}>
-                      <GlassButton variant="ghost" size="sm">
-                        Inspect Match Analysis
-                      </GlassButton>
-                    </Link>
-                    <Link href={`/student/jobs/${job.id}`}>
-                      <GlassButton variant="secondary" size="sm">
-                        View Job Post
-                      </GlassButton>
-                    </Link>
+                    <GlassButton href={`/student/match?jobId=${job.id}`} variant="ghost" size="sm">
+                      Inspect Match Analysis
+                    </GlassButton>
+                    <GlassButton href={`/student/jobs/${job.id}`} variant="secondary" size="sm">
+                      View Job Post
+                    </GlassButton>
                   </div>
                 </div>
               </GlassCard>
@@ -168,7 +162,7 @@ export default function StudentApplicationsPage() {
           <EmptyState
             title="No applications yet"
             description="Browse available campus drives and apply to start your placement journey."
-            action={<Link href="/student/jobs"><GlassButton variant="primary">Browse Jobs</GlassButton></Link>}
+            action={<GlassButton href="/student/jobs" variant="primary">Browse Jobs</GlassButton>}
           />
         )}
       </div>

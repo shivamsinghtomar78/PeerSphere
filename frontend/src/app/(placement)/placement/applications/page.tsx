@@ -156,11 +156,9 @@ export default function PlacementApplicationsPage() {
 
                     <td className="py-3 px-4 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <Link href={`/placement/candidates/${student.id}`}>
-                          <GlassButton variant="ghost" size="sm">
-                            Inspect
-                          </GlassButton>
-                        </Link>
+                        <GlassButton href={`/placement/candidates/${student.id}`} variant="ghost" size="sm">
+                          Inspect
+                        </GlassButton>
                       </div>
                     </td>
                   </tr>

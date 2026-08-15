@@ -115,11 +115,9 @@ export default function CandidateComparisonPage() {
           </p>
         </div>
 
-        <Link href="/placement/candidates">
-          <GlassButton variant="secondary" size="md">
-            ← Back to All Candidates
-          </GlassButton>
-        </Link>
+        <GlassButton href="/placement/candidates" variant="secondary" size="md">
+          ← Back to All Candidates
+        </GlassButton>
       </div>
 
       {/* Comparison Matrix Table */}
@@ -231,11 +229,9 @@ export default function CandidateComparisonPage() {
                 {compareStudents.map((stu) => (
                   <td key={stu.id} className="py-4 px-4">
                     <div className="flex items-center gap-2">
-                      <Link href={`/placement/candidates/${stu.id}`}>
-                        <GlassButton variant="ghost" size="sm">
-                          Inspect
-                        </GlassButton>
-                      </Link>
+                      <GlassButton href={`/placement/candidates/${stu.id}`} variant="ghost" size="sm">
+                        Inspect
+                      </GlassButton>
                       <GlassButton variant="primary" size="sm">
                         Shortlist
                       </GlassButton>

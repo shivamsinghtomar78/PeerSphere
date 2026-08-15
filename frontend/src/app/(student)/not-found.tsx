@@ -35,11 +35,9 @@ export default function StudentNotFound() {
           </p>
 
           <div className="mt-8">
-            <Link href="/student" tabIndex={-1}>
-              <GlassButton variant="primary" size="lg" fullWidth>
-                Back to Student Portal
-              </GlassButton>
-            </Link>
+            <GlassButton href="/student" variant="primary" size="lg" fullWidth tabIndex={-1}>
+              Back to Student Portal
+            </GlassButton>
           </div>
         </GlassCard>
       </div>

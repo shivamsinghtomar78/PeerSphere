@@ -136,16 +136,12 @@ export default function PlacementDashboardPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          <Link href="/placement/compare">
-            <GlassButton variant="secondary" size="sm">
-              Compare Candidates
-            </GlassButton>
-          </Link>
-          <Link href="/placement/jobs">
-            <GlassButton variant="primary" size="sm">
-              + Post Campus Drive
-            </GlassButton>
-          </Link>
+          <GlassButton href="/placement/compare" variant="secondary" size="sm">
+            Compare Candidates
+          </GlassButton>
+          <GlassButton href="/placement/jobs" variant="primary" size="sm">
+            + Post Campus Drive
+          </GlassButton>
         </div>
       </div>
 
@@ -217,11 +213,9 @@ export default function PlacementDashboardPage() {
                         size="sm"
                         showDetails={false}
                       />
-                      <Link href={`/placement/candidates/${cand.student.id}`}>
-                        <GlassButton variant="ghost" size="sm">
-                          Inspect
-                        </GlassButton>
-                      </Link>
+                      <GlassButton href={`/placement/candidates/${cand.student.id}`} variant="ghost" size="sm">
+                        Inspect
+                      </GlassButton>
                     </div>
                   </div>
                 ))}
@@ -289,11 +283,9 @@ export default function PlacementDashboardPage() {
             </div>
 
             <div className="mt-4 pt-3 border-t border-border-subtle">
-              <Link href="/placement/reports" className="w-full block">
-                <GlassButton variant="secondary" size="sm" fullWidth>
-                  Export Department Training Recommendations
-                </GlassButton>
-              </Link>
+              <GlassButton href="/placement/reports" variant="secondary" size="sm" fullWidth>
+                Export Department Training Recommendations
+              </GlassButton>
             </div>
           </GlassCard>
         )}
@@ -326,11 +318,9 @@ export default function PlacementDashboardPage() {
                     <GlassBadge variant="default" size="sm">
                       {job.applicationCount || 0} Applicants
                     </GlassBadge>
-                    <Link href={`/placement/candidates?jobId=${job.id}`}>
-                      <GlassButton variant="secondary" size="sm">
-                        Candidates
-                      </GlassButton>
-                    </Link>
+                    <GlassButton href={`/placement/candidates?jobId=${job.id}`} variant="secondary" size="sm">
+                      Candidates
+                    </GlassButton>
                   </div>
                 </div>
               ))}
@@ -338,11 +328,9 @@ export default function PlacementDashboardPage() {
           </div>
 
           <div className="mt-4 pt-3 border-t border-border-subtle">
-            <Link href="/placement/jobs">
-              <GlassButton variant="ghost" size="sm">
-                + Create New Drive Specification
-              </GlassButton>
-            </Link>
+            <GlassButton href="/placement/jobs" variant="ghost" size="sm">
+              + Create New Drive Specification
+            </GlassButton>
           </div>
         </GlassCard>
 
