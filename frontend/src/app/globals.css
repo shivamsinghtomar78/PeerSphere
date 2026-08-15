@@ -1,0 +1,272 @@
+/*
+ * PeerSphere — globals.css
+ * Imports tokens and glass, sets base resets, typography, and utility classes.
+ */
+
+@import "tailwindcss";
+@import "../styles/tokens.css";
+@import "../styles/glass.css";
+
+/* ─── Tailwind Theme Extension — map CSS vars → Tailwind tokens ─── */
+@theme inline {
+  /* Fonts */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
+  /* Colors */
+  --color-canvas:         var(--ps-canvas);
+  --color-canvas-subtle:  var(--ps-canvas-subtle);
+  --color-surface:        var(--ps-surface);
+  --color-surface-raised: var(--ps-surface-raised);
+  --color-border:         var(--ps-border);
+  --color-border-subtle:  var(--ps-border-subtle);
+  --color-border-strong:  var(--ps-border-strong);
+  --color-text:           var(--ps-text);
+  --color-text-muted:     var(--ps-text-muted);
+  --color-text-faint:     var(--ps-text-faint);
+  --color-text-inverse:   var(--ps-text-inverse);
+  --color-accent:         var(--ps-accent);
+  --color-accent-light:   var(--ps-accent-light);
+  --color-accent-dark:    var(--ps-accent-dark);
+  --color-success:        var(--ps-success);
+  --color-success-light:  var(--ps-success-light);
+  --color-warning:        var(--ps-warning);
+  --color-warning-light:  var(--ps-warning-light);
+  --color-danger:         var(--ps-danger);
+  --color-danger-light:   var(--ps-danger-light);
+  --color-info:           var(--ps-info);
+  --color-info-light:     var(--ps-info-light);
+  --color-match-strong:   var(--ps-match-strong);
+  --color-match-partial:  var(--ps-match-partial);
+  --color-match-missing:  var(--ps-match-missing);
+  --color-scrim:          var(--ps-scrim);
+
+  /* Spacing */
+  --spacing-1:  var(--ps-space-1);
+  --spacing-2:  var(--ps-space-2);
+  --spacing-3:  var(--ps-space-3);
+  --spacing-4:  var(--ps-space-4);
+  --spacing-5:  var(--ps-space-5);
+  --spacing-6:  var(--ps-space-6);
+  --spacing-8:  var(--ps-space-8);
+  --spacing-10: var(--ps-space-10);
+  --spacing-12: var(--ps-space-12);
+  --spacing-16: var(--ps-space-16);
+
+  /* Border radius */
+  --radius-sm:   var(--ps-radius-sm);
+  --radius-md:   var(--ps-radius-md);
+  --radius-lg:   var(--ps-radius-lg);
+  --radius-xl:   var(--ps-radius-xl);
+  --radius-pill: var(--ps-radius-pill);
+
+  /* Shadows */
+  --shadow-sm:  var(--ps-shadow-sm);
+  --shadow-md:  var(--ps-shadow-md);
+  --shadow-lg:  var(--ps-shadow-lg);
+  --shadow-xl:  var(--ps-shadow-xl);
+
+  /* Typography */
+  --font-sans:  var(--ps-font-sans);
+  --font-mono:  var(--ps-font-mono);
+
+  /* Animation */
+  --duration-micro:  var(--ps-dur-micro);
+  --duration-fast:   var(--ps-dur-fast);
+  --duration-normal: var(--ps-dur-normal);
+  --duration-slow:   var(--ps-dur-slow);
+}
+
+/* ─── Base Reset & Global Styles ─────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+body {
+  font-family: var(--ps-font-sans);
+  font-size: var(--ps-text-base);
+  line-height: var(--ps-leading-normal);
+  color: var(--ps-text);
+  background-color: var(--ps-canvas);
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+/* ─── Semantic Typography Classes ────────────────────────────────── */
+.text-display {
+  font-size: var(--ps-text-display);
+  font-weight: var(--ps-weight-bold);
+  line-height: var(--ps-leading-tight);
+  letter-spacing: var(--ps-tracking-tight);
+}
+
+.text-h1 {
+  font-size: var(--ps-text-4xl);
+  font-weight: var(--ps-weight-bold);
+  line-height: var(--ps-leading-tight);
+  letter-spacing: var(--ps-tracking-tight);
+}
+
+.text-h2 {
+  font-size: var(--ps-text-3xl);
+  font-weight: var(--ps-weight-semibold);
+  line-height: var(--ps-leading-snug);
+  letter-spacing: var(--ps-tracking-tight);
+}
+
+.text-h3 {
+  font-size: var(--ps-text-2xl);
+  font-weight: var(--ps-weight-semibold);
+  line-height: var(--ps-leading-snug);
+}
+
+.text-title {
+  font-size: var(--ps-text-lg);
+  font-weight: var(--ps-weight-semibold);
+  line-height: var(--ps-leading-snug);
+}
+
+.text-body {
+  font-size: var(--ps-text-base);
+  font-weight: var(--ps-weight-normal);
+  line-height: var(--ps-leading-relaxed);
+}
+
+.text-label {
+  font-size: var(--ps-text-sm);
+  font-weight: var(--ps-weight-medium);
+  line-height: var(--ps-leading-normal);
+}
+
+.text-caption {
+  font-size: var(--ps-text-xs);
+  font-weight: var(--ps-weight-normal);
+  line-height: var(--ps-leading-normal);
+  color: var(--ps-text-muted);
+}
+
+/* Tabular numerals for scores, dates, ranks */
+.tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* ─── Focus Styles ───────────────────────────────────────────────── */
+:focus-visible {
+  outline: none;
+  box-shadow: var(--ps-focus-ring);
+  border-radius: var(--ps-radius-sm);
+}
+
+/* ─── Selection ──────────────────────────────────────────────────── */
+::selection {
+  background-color: var(--ps-accent-light);
+  color: var(--ps-text);
+}
+
+/* ─── Scrollbar ──────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--ps-border);
+  border-radius: var(--ps-radius-pill);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ps-border-strong);
+}
+
+/* ─── Accessibility — screen reader only ────────────────────────── */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* ─── Status colour utilities (always pair with icon + label) ─────── */
+.status-match   { color: var(--ps-match-strong); }
+.status-partial { color: var(--ps-match-partial); }
+.status-missing { color: var(--ps-match-missing); }
+
+.bg-match   { background-color: var(--ps-success-light); }
+.bg-partial { background-color: var(--ps-warning-light); }
+.bg-missing { background-color: var(--ps-danger-light); }
+
+/* ─── Surface utility classes ────────────────────────────────────── */
+.surface {
+  background-color: var(--ps-surface);
+  border: 1px solid var(--ps-border-subtle);
+}
+
+.surface-raised {
+  background-color: var(--ps-surface-raised);
+  border: 1px solid var(--ps-border-subtle);
+  box-shadow: var(--ps-shadow-sm);
+}
+
+/* ─── Layout helpers ─────────────────────────────────────────────── */
+.container-narrow { max-width: var(--ps-content-narrow); margin-inline: auto; }
+.container-medium { max-width: var(--ps-content-medium); margin-inline: auto; }
+.container-wide   { max-width: var(--ps-content-wide);   margin-inline: auto; }
+
+/* ─── Bento grid ─────────────────────────────────────────────────── */
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: var(--ps-space-4);
+}
+
+@media (max-width: 1023px) {
+  .bento-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+@media (max-width: 639px) {
+  .bento-grid {
+    grid-template-columns: 1fr;
+    gap: var(--ps-space-3);
+  }
+}
+
+/* ─── Smooth transitions for interactive elements ────────────────── */
+.transition-base {
+  transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+  transition-duration: var(--ps-dur-fast);
+  transition-timing-function: var(--ps-ease-out);
+}
+
+.transition-slow {
+  transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+  transition-duration: var(--ps-dur-normal);
+  transition-timing-function: var(--ps-ease-out);
+}

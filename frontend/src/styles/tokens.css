@@ -1,0 +1,335 @@
+/*
+ * PeerSphere Design Tokens
+ * Central source of truth for all visual values.
+ * Components consume these variables — never raw values.
+ */
+
+/* ─── Light Mode Tokens ───────────────────────────────────────────── */
+:root {
+  /* Canvas — page background */
+  --ps-canvas:          hsl(220 14% 96%);
+  --ps-canvas-subtle:   hsl(220 14% 98%);
+
+  /* Surface — opaque elevated cards/panels */
+  --ps-surface:         hsl(0 0% 100%);
+  --ps-surface-raised:  hsl(220 14% 98%);
+  --ps-surface-overlay: hsl(0 0% 100%);
+
+  /* Border */
+  --ps-border:          hsl(220 13% 88%);
+  --ps-border-subtle:   hsl(220 13% 93%);
+  --ps-border-strong:   hsl(220 13% 78%);
+
+  /* Text */
+  --ps-text:            hsl(222 20% 10%);
+  --ps-text-muted:      hsl(220 10% 46%);
+  --ps-text-faint:      hsl(220 8% 64%);
+  --ps-text-inverse:    hsl(0 0% 100%);
+
+  /* Accent — one restrained institutional blue */
+  --ps-accent:          hsl(221 83% 53%);
+  --ps-accent-light:    hsl(221 83% 95%);
+  --ps-accent-dark:     hsl(221 83% 43%);
+  --ps-accent-muted:    hsl(221 50% 70%);
+
+  /* Semantic — Success */
+  --ps-success:         hsl(142 71% 35%);
+  --ps-success-light:   hsl(142 71% 94%);
+  --ps-success-dark:    hsl(142 71% 25%);
+
+  /* Semantic — Warning */
+  --ps-warning:         hsl(38 92% 42%);
+  --ps-warning-light:   hsl(38 92% 94%);
+  --ps-warning-dark:    hsl(38 92% 32%);
+
+  /* Semantic — Danger */
+  --ps-danger:          hsl(0 72% 51%);
+  --ps-danger-light:    hsl(0 72% 95%);
+  --ps-danger-dark:     hsl(0 72% 41%);
+
+  /* Semantic — Info */
+  --ps-info:            hsl(199 89% 40%);
+  --ps-info-light:      hsl(199 89% 94%);
+  --ps-info-dark:       hsl(199 89% 30%);
+
+  /* Match status colors (accessible: always paired with label/icon) */
+  --ps-match-strong:    hsl(142 71% 35%);
+  --ps-match-partial:   hsl(38 92% 42%);
+  --ps-match-missing:   hsl(0 72% 51%);
+
+  /* Focus ring */
+  --ps-focus:           hsl(221 83% 53%);
+  --ps-focus-ring:      0 0 0 2px hsl(0 0% 100%), 0 0 0 4px hsl(221 83% 53%);
+
+  /* Glass — navigation chrome */
+  --ps-glass-nav-bg:          hsla(220 20% 98% / 0.80);
+  --ps-glass-nav-border:      hsla(220 20% 80% / 0.60);
+  --ps-glass-nav-shadow:      0 1px 24px hsla(220 30% 10% / 0.08);
+  --ps-glass-nav-blur:        blur(20px);
+  --ps-glass-nav-saturate:    saturate(1.8);
+
+  /* Glass — controls (buttons, tabs, filters) */
+  --ps-glass-ctrl-bg:         hsla(220 20% 100% / 0.70);
+  --ps-glass-ctrl-border:     hsla(220 20% 80% / 0.50);
+  --ps-glass-ctrl-shadow:     0 1px 8px hsla(220 30% 10% / 0.06);
+  --ps-glass-ctrl-blur:       blur(12px);
+
+  /* Glass — overlays (dialogs, sheets, menus) */
+  --ps-glass-overlay-bg:      hsla(220 20% 100% / 0.90);
+  --ps-glass-overlay-border:  hsla(220 20% 80% / 0.50);
+  --ps-glass-overlay-shadow:  0 8px 40px hsla(220 30% 10% / 0.14);
+  --ps-glass-overlay-blur:    blur(24px);
+
+  /* Glass — floating actions */
+  --ps-glass-float-bg:        hsla(220 20% 100% / 0.85);
+  --ps-glass-float-border:    hsla(220 20% 80% / 0.55);
+  --ps-glass-float-shadow:    0 4px 20px hsla(220 30% 10% / 0.10);
+  --ps-glass-float-blur:      blur(16px);
+
+  /* Scrim — behind overlays */
+  --ps-scrim:           hsla(222 20% 10% / 0.40);
+
+  /* ─── Spacing scale (4px base) ──────────────────────────────────── */
+  --ps-space-1:  0.25rem;  /* 4px  */
+  --ps-space-2:  0.5rem;   /* 8px  */
+  --ps-space-3:  0.75rem;  /* 12px */
+  --ps-space-4:  1rem;     /* 16px */
+  --ps-space-5:  1.25rem;  /* 20px */
+  --ps-space-6:  1.5rem;   /* 24px */
+  --ps-space-8:  2rem;     /* 32px */
+  --ps-space-10: 2.5rem;   /* 40px */
+  --ps-space-12: 3rem;     /* 48px */
+  --ps-space-16: 4rem;     /* 64px */
+
+  /* ─── Border Radius ─────────────────────────────────────────────── */
+  --ps-radius-sm:   0.5rem;    /* 8px  — controls, badges, chips */
+  --ps-radius-md:   0.75rem;   /* 12px — ordinary surfaces */
+  --ps-radius-lg:   1rem;      /* 16px — prominent cards, sheets */
+  --ps-radius-xl:   1.5rem;    /* 24px — focal containers only */
+  --ps-radius-pill: 9999px;    /* pill — compact controls */
+
+  /* ─── Shadows ───────────────────────────────────────────────────── */
+  --ps-shadow-sm:  0 1px 3px hsla(220 30% 10% / 0.06), 0 1px 2px hsla(220 30% 10% / 0.04);
+  --ps-shadow-md:  0 4px 12px hsla(220 30% 10% / 0.08), 0 2px 4px hsla(220 30% 10% / 0.04);
+  --ps-shadow-lg:  0 10px 30px hsla(220 30% 10% / 0.10), 0 4px 8px hsla(220 30% 10% / 0.05);
+  --ps-shadow-xl:  0 20px 50px hsla(220 30% 10% / 0.14), 0 8px 16px hsla(220 30% 10% / 0.07);
+
+  /* ─── Typography ────────────────────────────────────────────────── */
+  --ps-font-sans:    'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --ps-font-mono:    'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  --ps-font-tabular: 'Inter', system-ui, sans-serif; /* tabular-nums applied via CSS class */
+
+  --ps-text-xs:    0.75rem;   /* 12px */
+  --ps-text-sm:    0.875rem;  /* 14px */
+  --ps-text-base:  1rem;      /* 16px */
+  --ps-text-lg:    1.125rem;  /* 18px */
+  --ps-text-xl:    1.25rem;   /* 20px */
+  --ps-text-2xl:   1.5rem;    /* 24px */
+  --ps-text-3xl:   1.875rem;  /* 30px */
+  --ps-text-4xl:   2.25rem;   /* 36px */
+  --ps-text-5xl:   3rem;      /* 48px */
+  --ps-text-display: 3.75rem; /* 60px */
+
+  --ps-leading-tight:  1.25;
+  --ps-leading-snug:   1.375;
+  --ps-leading-normal: 1.5;
+  --ps-leading-relaxed:1.625;
+
+  --ps-tracking-tight:  -0.025em;
+  --ps-tracking-normal: 0;
+  --ps-tracking-wide:   0.025em;
+  --ps-tracking-wider:  0.05em;
+
+  --ps-weight-normal:   400;
+  --ps-weight-medium:   500;
+  --ps-weight-semibold: 600;
+  --ps-weight-bold:     700;
+
+  /* ─── Animation ─────────────────────────────────────────────────── */
+  --ps-dur-micro:    110ms;  /* hover, focus feedback */
+  --ps-dur-fast:     180ms;  /* standard transitions  */
+  --ps-dur-normal:   250ms;  /* tab, filter changes   */
+  --ps-dur-slow:     350ms;  /* dialogs, sheets       */
+  --ps-dur-reveal:   500ms;  /* score reveals         */
+
+  --ps-ease-out:     cubic-bezier(0.16, 1, 0.3, 1);
+  --ps-ease-in:      cubic-bezier(0.4, 0, 1, 1);
+  --ps-ease-inout:   cubic-bezier(0.4, 0, 0.2, 1);
+  --ps-ease-spring:  cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ─── Z-index layers ────────────────────────────────────────────── */
+  --ps-z-base:      0;
+  --ps-z-raised:    10;
+  --ps-z-sticky:    100;
+  --ps-z-sidebar:   200;
+  --ps-z-header:    300;
+  --ps-z-dropdown:  400;
+  --ps-z-overlay:   500;
+  --ps-z-dialog:    600;
+  --ps-z-toast:     700;
+
+  /* ─── Layout ────────────────────────────────────────────────────── */
+  --ps-sidebar-width:        16rem;    /* 256px */
+  --ps-sidebar-width-compact: 4rem;   /* 64px  */
+  --ps-header-height:        3.5rem;  /* 56px  */
+  --ps-bottom-nav-height:    4rem;    /* 64px  */
+
+  --ps-content-narrow:  42rem;   /* reading / forms */
+  --ps-content-medium:  72rem;   /* standard content */
+  --ps-content-wide:    90rem;   /* tables, dashboards */
+}
+
+/* ─── Dark Mode Tokens ────────────────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ps-canvas:          hsl(222 20% 10%);
+    --ps-canvas-subtle:   hsl(222 20% 8%);
+
+    --ps-surface:         hsl(222 18% 14%);
+    --ps-surface-raised:  hsl(222 18% 17%);
+    --ps-surface-overlay: hsl(222 18% 14%);
+
+    --ps-border:          hsla(220 15% 60% / 0.18);
+    --ps-border-subtle:   hsla(220 15% 60% / 0.10);
+    --ps-border-strong:   hsla(220 15% 60% / 0.30);
+
+    --ps-text:            hsl(220 20% 94%);
+    --ps-text-muted:      hsl(220 12% 60%);
+    --ps-text-faint:      hsl(220 10% 42%);
+    --ps-text-inverse:    hsl(222 20% 10%);
+
+    --ps-accent:          hsl(217 91% 65%);
+    --ps-accent-light:    hsla(217 91% 65% / 0.15);
+    --ps-accent-dark:     hsl(217 91% 55%);
+    --ps-accent-muted:    hsl(217 60% 50%);
+
+    --ps-success:         hsl(142 60% 50%);
+    --ps-success-light:   hsla(142 60% 50% / 0.15);
+    --ps-success-dark:    hsl(142 60% 40%);
+
+    --ps-warning:         hsl(38 90% 55%);
+    --ps-warning-light:   hsla(38 90% 55% / 0.15);
+    --ps-warning-dark:    hsl(38 90% 45%);
+
+    --ps-danger:          hsl(0 80% 65%);
+    --ps-danger-light:    hsla(0 80% 65% / 0.15);
+    --ps-danger-dark:     hsl(0 80% 55%);
+
+    --ps-info:            hsl(199 85% 55%);
+    --ps-info-light:      hsla(199 85% 55% / 0.15);
+    --ps-info-dark:       hsl(199 85% 45%);
+
+    --ps-match-strong:    hsl(142 60% 50%);
+    --ps-match-partial:   hsl(38 90% 55%);
+    --ps-match-missing:   hsl(0 80% 65%);
+
+    --ps-focus:           hsl(217 91% 65%);
+    --ps-focus-ring:      0 0 0 2px hsl(222 20% 10%), 0 0 0 4px hsl(217 91% 65%);
+
+    /* Glass — dark */
+    --ps-glass-nav-bg:          hsla(222 20% 12% / 0.82);
+    --ps-glass-nav-border:      hsla(220 20% 50% / 0.20);
+    --ps-glass-nav-shadow:      0 1px 24px hsla(0 0% 0% / 0.30);
+
+    --ps-glass-ctrl-bg:         hsla(222 20% 16% / 0.72);
+    --ps-glass-ctrl-border:     hsla(220 20% 50% / 0.18);
+    --ps-glass-ctrl-shadow:     0 1px 8px hsla(0 0% 0% / 0.20);
+
+    --ps-glass-overlay-bg:      hsla(222 20% 12% / 0.92);
+    --ps-glass-overlay-border:  hsla(220 20% 50% / 0.20);
+    --ps-glass-overlay-shadow:  0 8px 40px hsla(0 0% 0% / 0.40);
+
+    --ps-glass-float-bg:        hsla(222 20% 14% / 0.88);
+    --ps-glass-float-border:    hsla(220 20% 50% / 0.22);
+    --ps-glass-float-shadow:    0 4px 20px hsla(0 0% 0% / 0.28);
+
+    --ps-scrim:           hsla(0 0% 0% / 0.60);
+
+    --ps-shadow-sm:  0 1px 3px hsla(0 0% 0% / 0.20), 0 1px 2px hsla(0 0% 0% / 0.14);
+    --ps-shadow-md:  0 4px 12px hsla(0 0% 0% / 0.24), 0 2px 4px hsla(0 0% 0% / 0.14);
+    --ps-shadow-lg:  0 10px 30px hsla(0 0% 0% / 0.30), 0 4px 8px hsla(0 0% 0% / 0.18);
+    --ps-shadow-xl:  0 20px 50px hsla(0 0% 0% / 0.40), 0 8px 16px hsla(0 0% 0% / 0.24);
+  }
+}
+
+/* ─── Explicit dark-mode class override (for ThemeSwitcher) ──────── */
+[data-theme="dark"] {
+  --ps-canvas:          hsl(222 20% 10%);
+  --ps-canvas-subtle:   hsl(222 20% 8%);
+  --ps-surface:         hsl(222 18% 14%);
+  --ps-surface-raised:  hsl(222 18% 17%);
+  --ps-surface-overlay: hsl(222 18% 14%);
+  --ps-border:          hsla(220 15% 60% / 0.18);
+  --ps-border-subtle:   hsla(220 15% 60% / 0.10);
+  --ps-border-strong:   hsla(220 15% 60% / 0.30);
+  --ps-text:            hsl(220 20% 94%);
+  --ps-text-muted:      hsl(220 12% 60%);
+  --ps-text-faint:      hsl(220 10% 42%);
+  --ps-text-inverse:    hsl(222 20% 10%);
+  --ps-accent:          hsl(217 91% 65%);
+  --ps-accent-light:    hsla(217 91% 65% / 0.15);
+  --ps-accent-dark:     hsl(217 91% 55%);
+  --ps-accent-muted:    hsl(217 60% 50%);
+  --ps-success:         hsl(142 60% 50%);
+  --ps-success-light:   hsla(142 60% 50% / 0.15);
+  --ps-warning:         hsl(38 90% 55%);
+  --ps-warning-light:   hsla(38 90% 55% / 0.15);
+  --ps-danger:          hsl(0 80% 65%);
+  --ps-danger-light:    hsla(0 80% 65% / 0.15);
+  --ps-info:            hsl(199 85% 55%);
+  --ps-info-light:      hsla(199 85% 55% / 0.15);
+  --ps-match-strong:    hsl(142 60% 50%);
+  --ps-match-partial:   hsl(38 90% 55%);
+  --ps-match-missing:   hsl(0 80% 65%);
+  --ps-focus:           hsl(217 91% 65%);
+  --ps-focus-ring:      0 0 0 2px hsl(222 20% 10%), 0 0 0 4px hsl(217 91% 65%);
+  --ps-glass-nav-bg:          hsla(222 20% 12% / 0.82);
+  --ps-glass-nav-border:      hsla(220 20% 50% / 0.20);
+  --ps-glass-nav-shadow:      0 1px 24px hsla(0 0% 0% / 0.30);
+  --ps-glass-ctrl-bg:         hsla(222 20% 16% / 0.72);
+  --ps-glass-ctrl-border:     hsla(220 20% 50% / 0.18);
+  --ps-glass-ctrl-shadow:     0 1px 8px hsla(0 0% 0% / 0.20);
+  --ps-glass-overlay-bg:      hsla(222 20% 12% / 0.92);
+  --ps-glass-overlay-border:  hsla(220 20% 50% / 0.20);
+  --ps-glass-overlay-shadow:  0 8px 40px hsla(0 0% 0% / 0.40);
+  --ps-glass-float-bg:        hsla(222 20% 14% / 0.88);
+  --ps-glass-float-border:    hsla(220 20% 50% / 0.22);
+  --ps-glass-float-shadow:    0 4px 20px hsla(0 0% 0% / 0.28);
+  --ps-scrim:           hsla(0 0% 0% / 0.60);
+  --ps-shadow-sm:  0 1px 3px hsla(0 0% 0% / 0.20), 0 1px 2px hsla(0 0% 0% / 0.14);
+  --ps-shadow-md:  0 4px 12px hsla(0 0% 0% / 0.24), 0 2px 4px hsla(0 0% 0% / 0.14);
+  --ps-shadow-lg:  0 10px 30px hsla(0 0% 0% / 0.30), 0 4px 8px hsla(0 0% 0% / 0.18);
+  --ps-shadow-xl:  0 20px 50px hsla(0 0% 0% / 0.40), 0 8px 16px hsla(0 0% 0% / 0.24);
+}
+
+[data-theme="light"] {
+  --ps-canvas:          hsl(220 14% 96%);
+  --ps-canvas-subtle:   hsl(220 14% 98%);
+  --ps-surface:         hsl(0 0% 100%);
+  --ps-surface-raised:  hsl(220 14% 98%);
+  --ps-surface-overlay: hsl(0 0% 100%);
+  --ps-border:          hsl(220 13% 88%);
+  --ps-border-subtle:   hsl(220 13% 93%);
+  --ps-border-strong:   hsl(220 13% 78%);
+  --ps-text:            hsl(222 20% 10%);
+  --ps-text-muted:      hsl(220 10% 46%);
+  --ps-text-faint:      hsl(220 8% 64%);
+  --ps-text-inverse:    hsl(0 0% 100%);
+  --ps-accent:          hsl(221 83% 53%);
+  --ps-accent-light:    hsl(221 83% 95%);
+  --ps-accent-dark:     hsl(221 83% 43%);
+  --ps-glass-nav-bg:          hsla(220 20% 98% / 0.80);
+  --ps-glass-nav-border:      hsla(220 20% 80% / 0.60);
+  --ps-glass-nav-shadow:      0 1px 24px hsla(220 30% 10% / 0.08);
+  --ps-glass-ctrl-bg:         hsla(220 20% 100% / 0.70);
+  --ps-glass-ctrl-border:     hsla(220 20% 80% / 0.50);
+  --ps-glass-ctrl-shadow:     0 1px 8px hsla(220 30% 10% / 0.06);
+  --ps-glass-overlay-bg:      hsla(220 20% 100% / 0.90);
+  --ps-glass-overlay-border:  hsla(220 20% 80% / 0.50);
+  --ps-glass-overlay-shadow:  0 8px 40px hsla(220 30% 10% / 0.14);
+  --ps-scrim:           hsla(222 20% 10% / 0.40);
+  --ps-shadow-sm:  0 1px 3px hsla(220 30% 10% / 0.06), 0 1px 2px hsla(220 30% 10% / 0.04);
+  --ps-shadow-md:  0 4px 12px hsla(220 30% 10% / 0.08), 0 2px 4px hsla(220 30% 10% / 0.04);
+  --ps-shadow-lg:  0 10px 30px hsla(220 30% 10% / 0.10), 0 4px 8px hsla(220 30% 10% / 0.05);
+  --ps-shadow-xl:  0 20px 50px hsla(220 30% 10% / 0.14), 0 8px 16px hsla(220 30% 10% / 0.07);
+}

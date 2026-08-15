@@ -1,0 +1,88 @@
+/*
+ * PeerSphere Glass System
+ * Liquid Glass utilities — applied only to navigation, controls, overlays.
+ * Data cards and content areas use opaque surfaces from tokens.css.
+ */
+
+/* ─── Reduced Transparency Fallback ─────────────────────────────── */
+@media (prefers-reduced-transparency: reduce) {
+  .glass-nav,
+  .glass-ctrl,
+  .glass-overlay,
+  .glass-float {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  .glass-nav     { background: var(--ps-surface) !important; }
+  .glass-ctrl    { background: var(--ps-surface-raised) !important; }
+  .glass-overlay { background: var(--ps-surface-overlay) !important; }
+  .glass-float   { background: var(--ps-surface-raised) !important; }
+}
+
+/* ─── Glass — Navigation (sidebar, header, bottom nav) ──────────── */
+.glass-nav {
+  background:       var(--ps-glass-nav-bg);
+  border:           1px solid var(--ps-glass-nav-border);
+  box-shadow:       var(--ps-glass-nav-shadow);
+  backdrop-filter:  var(--ps-glass-nav-blur) var(--ps-glass-nav-saturate);
+  -webkit-backdrop-filter: var(--ps-glass-nav-blur) var(--ps-glass-nav-saturate);
+}
+
+/* ─── Glass — Controls (buttons, tabs, search, filters) ─────────── */
+.glass-ctrl {
+  background:       var(--ps-glass-ctrl-bg);
+  border:           1px solid var(--ps-glass-ctrl-border);
+  box-shadow:       var(--ps-glass-ctrl-shadow);
+  backdrop-filter:  var(--ps-glass-ctrl-blur);
+  -webkit-backdrop-filter: var(--ps-glass-ctrl-blur);
+  transition:
+    background var(--ps-dur-micro) var(--ps-ease-out),
+    border-color var(--ps-dur-micro) var(--ps-ease-out),
+    box-shadow var(--ps-dur-micro) var(--ps-ease-out);
+}
+
+.glass-ctrl:hover:not(:disabled) {
+  border-color: var(--ps-border-strong);
+  box-shadow: var(--ps-shadow-md);
+}
+
+/* ─── Glass — Overlay (dialogs, sheets, menus, popovers) ─────────── */
+.glass-overlay {
+  background:       var(--ps-glass-overlay-bg);
+  border:           1px solid var(--ps-glass-overlay-border);
+  box-shadow:       var(--ps-glass-overlay-shadow);
+  backdrop-filter:  var(--ps-glass-overlay-blur);
+  -webkit-backdrop-filter: var(--ps-glass-overlay-blur);
+}
+
+/* ─── Glass — Floating action ────────────────────────────────────── */
+.glass-float {
+  background:       var(--ps-glass-float-bg);
+  border:           1px solid var(--ps-glass-float-border);
+  box-shadow:       var(--ps-glass-float-shadow);
+  backdrop-filter:  var(--ps-glass-float-blur);
+  -webkit-backdrop-filter: var(--ps-glass-float-blur);
+}
+
+/* ─── Highlight bar (active nav item indicator) ─────────────────── */
+.glass-nav-highlight {
+  position: relative;
+}
+.glass-nav-highlight::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 60%;
+  background: var(--ps-accent);
+  border-radius: var(--ps-radius-pill);
+  transition: opacity var(--ps-dur-fast) var(--ps-ease-out);
+}
+
+/* ─── Focus — always outside glass boundary ─────────────────────── */
+.glass-focus:focus-visible {
+  outline: none;
+  box-shadow: var(--ps-focus-ring);
+}

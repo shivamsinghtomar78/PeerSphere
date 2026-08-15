@@ -1,0 +1,401 @@
+// PeerSphere — Prisma Schema
+// Matches docs/03-database/schema.md specification
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ────────────────────────────────────────────────────────
+
+enum UserRole {
+  STUDENT
+  PLACEMENT_ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum ResumeState {
+  UPLOADED
+  QUARANTINED
+  SCANNED
+  EXTRACTING
+  EXTRACTED
+  NEEDS_MANUAL_REVIEW
+  FAILED
+  DELETED
+}
+
+enum JobStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+  ARCHIVED
+}
+
+enum JobType {
+  FULL_TIME
+  INTERNSHIP
+  CONTRACT
+}
+
+enum WorkMode {
+  ONSITE
+  REMOTE
+  HYBRID
+}
+
+enum RequirementType {
+  HARD
+  SOFT
+}
+
+enum EligibilityStatus {
+  ELIGIBLE
+  INELIGIBLE
+  CONDITIONAL
+  PENDING
+}
+
+enum EvaluationStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  REVIEW_REQUIRED
+  FAILED
+}
+
+enum SkillMatchState {
+  STRONG
+  PARTIAL
+  MISSING
+}
+
+enum ApplicationStatus {
+  APPLIED
+  UNDER_REVIEW
+  SHORTLISTED
+  INTERVIEW_SCHEDULED
+  OFFER_EXTENDED
+  OFFER_ACCEPTED
+  REJECTED
+  WITHDRAWN
+}
+
+enum SkillSource {
+  RESUME
+  MANUAL
+  VERIFIED
+}
+
+// ─── Users ────────────────────────────────────────────────────────
+
+model User {
+  id           String     @id @default(uuid())
+  email        String     @unique
+  passwordHash String     @map("password_hash")
+  role         UserRole
+  status       UserStatus @default(ACTIVE)
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  student      Student?
+  auditEvents  AuditEvent[]
+  overrides    ReviewOverride[] @relation("OverrideActor")
+
+  @@map("users")
+}
+
+// ─── Students ─────────────────────────────────────────────────────
+
+model Student {
+  id                  String   @id @default(uuid())
+  userId              String   @unique @map("user_id")
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name                String
+  rollNumber          String   @unique @map("roll_number")
+  department          String
+  program             String   // B.Tech, M.Tech, etc.
+  year                Int
+  cgpa                Decimal? @db.Decimal(4, 2)
+  activeBacklogs      Int      @default(0) @map("active_backlogs")
+  totalBacklogs       Int      @default(0) @map("total_backlogs")
+  profileCompleteness Int      @default(0) @map("profile_completeness")
+  placementReadiness  Int      @default(0) @map("placement_readiness")
+
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  resumeVersions      ResumeVersion[]
+  skillEvidence       StudentSkillEvidence[]
+  evaluations         Evaluation[]
+  applications        Application[]
+
+  @@map("students")
+}
+
+// ─── Skills (taxonomy) ────────────────────────────────────────────
+
+model Skill {
+  id              String    @id @default(uuid())
+  canonicalName   String    @unique @map("canonical_name")
+  category        String
+  taxonomyVersion String    @default("1.0") @map("taxonomy_version")
+  aliases         String[]  // alternative names for matching
+  deprecatedAt    DateTime? @map("deprecated_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  studentEvidence    StudentSkillEvidence[]
+  jobRequirements    JobRequirement[]
+  requirementMatches RequirementMatch[]
+
+  @@map("skills")
+}
+
+// ─── Student Skill Evidence ────────────────────────────────────────
+
+model StudentSkillEvidence {
+  id              String      @id @default(uuid())
+  studentId       String      @map("student_id")
+  student         Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  skillId         String      @map("skill_id")
+  skill           Skill       @relation(fields: [skillId], references: [id])
+  resumeVersionId String?     @map("resume_version_id")
+  resumeVersion   ResumeVersion? @relation(fields: [resumeVersionId], references: [id])
+
+  source          SkillSource @default(MANUAL)
+  evidenceText    String?     @map("evidence_text")
+  proficiency     Int?        // 0-100
+  confidence      Int         @default(80) // 0-100 extraction confidence
+
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  @@unique([studentId, skillId])
+  @@map("student_skill_evidence")
+}
+
+// ─── Resume Versions ──────────────────────────────────────────────
+
+model ResumeVersion {
+  id             String      @id @default(uuid())
+  studentId      String      @map("student_id")
+  student        Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  storageKey     String      @unique @map("storage_key")
+  originalName   String      @map("original_name")
+  checksum       String
+  mimeType       String      @map("mime_type")
+  sizeBytes      Int         @map("size_bytes")
+  state          ResumeState @default(UPLOADED)
+  parserVersion  String?     @map("parser_version")
+
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @updatedAt @map("updated_at")
+  deletedAt      DateTime?   @map("deleted_at")
+
+  skillEvidence  StudentSkillEvidence[]
+
+  @@map("resume_versions")
+}
+
+// ─── Jobs ─────────────────────────────────────────────────────────
+
+model Job {
+  id           String    @id @default(uuid())
+  createdById  String    @map("created_by_id")
+  status       JobStatus @default(DRAFT)
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  versions     JobVersion[]
+  applications Application[]
+
+  @@map("jobs")
+}
+
+model JobVersion {
+  id          String   @id @default(uuid())
+  jobId       String   @map("job_id")
+  job         Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  version     Int      @default(1)
+
+  title       String
+  company     String
+  location    String
+  workMode    WorkMode @default(HYBRID) @map("work_mode")
+  jobType     JobType  @default(FULL_TIME) @map("job_type")
+  salary      String?
+  description String
+  deadline    DateTime
+
+  // Eligibility hard constraints
+  minCgpa              Decimal? @map("min_cgpa") @db.Decimal(4, 2)
+  maxBacklogs          Int      @default(0) @map("max_backlogs")
+  allowedDepartments   String[] @map("allowed_departments")
+  allowedPrograms      String[] @map("allowed_programs")
+
+  applicationCount Int @default(0) @map("application_count")
+  shortlistedCount Int @default(0) @map("shortlisted_count")
+
+  publishedAt  DateTime? @map("published_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  requirements JobRequirement[]
+  evaluations  Evaluation[]
+
+  @@unique([jobId, version])
+  @@map("job_versions")
+}
+
+// ─── Job Requirements ─────────────────────────────────────────────
+
+model JobRequirement {
+  id           String          @id @default(uuid())
+  jobVersionId String          @map("job_version_id")
+  jobVersion   JobVersion      @relation(fields: [jobVersionId], references: [id], onDelete: Cascade)
+
+  type         RequirementType @default(SOFT)
+  skillId      String?         @map("skill_id")
+  skill        Skill?          @relation(fields: [skillId], references: [id])
+  weight       Float           @default(1.0)
+  required     Boolean         @default(true)
+  label        String          // human-readable label
+
+  requirementMatches RequirementMatch[]
+
+  @@map("job_requirements")
+}
+
+// ─── Evaluations ──────────────────────────────────────────────────
+
+model Evaluation {
+  id             String           @id @default(uuid())
+  studentId      String           @map("student_id")
+  student        Student          @relation(fields: [studentId], references: [id])
+  jobVersionId   String           @map("job_version_id")
+  jobVersion     JobVersion       @relation(fields: [jobVersionId], references: [id])
+
+  inputSnapshot  Json             @map("input_snapshot")  // immutable snapshot at eval time
+  snapshotHash   String           @map("snapshot_hash")
+
+  eligibility    EligibilityStatus @default(PENDING)
+  status         EvaluationStatus  @default(QUEUED)
+
+  overallScore    Int?    @map("overall_score")     // 0-100
+  confidenceScore Int?    @map("confidence_score")  // 0-100
+  coveragePercent Int?    @map("coverage_percent")  // 0-100
+  matchSummary    String? @map("match_summary")
+
+  algorithmVersion String  @default("2.1.0") @map("algorithm_version")
+  requiresReview   Boolean @default(false) @map("requires_review")
+  reviewNote       String? @map("review_note")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  requirementMatches RequirementMatch[]
+  recommendations    Recommendation[]
+  overrides          ReviewOverride[]
+
+  @@map("evaluations")
+}
+
+// ─── Requirement Matches ──────────────────────────────────────────
+
+model RequirementMatch {
+  id              String          @id @default(uuid())
+  evaluationId    String          @map("evaluation_id")
+  evaluation      Evaluation      @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+  requirementId   String          @map("requirement_id")
+  requirement     JobRequirement  @relation(fields: [requirementId], references: [id])
+  skillId         String?         @map("skill_id")
+  skill           Skill?          @relation(fields: [skillId], references: [id])
+
+  matchState      SkillMatchState @map("match_state")
+  contribution    Float           @default(0) // score contribution 0-1
+  explanation     String?
+
+  @@map("requirement_matches")
+}
+
+// ─── Recommendations ──────────────────────────────────────────────
+
+model Recommendation {
+  id                  String   @id @default(uuid())
+  evaluationId        String   @map("evaluation_id")
+  evaluation          Evaluation @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+
+  skillName           String   @map("skill_name")
+  priority            String   // high | medium | low
+  reason              String
+  steps               String[] // ordered improvement steps
+  potentialLift       Int?     @map("potential_lift") // score points
+  estimatedWeeks      Int?     @map("estimated_weeks")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("recommendations")
+}
+
+// ─── Applications ─────────────────────────────────────────────────
+
+model Application {
+  id          String            @id @default(uuid())
+  studentId   String            @map("student_id")
+  student     Student           @relation(fields: [studentId], references: [id])
+  jobId       String            @map("job_id")
+  job         Job               @relation(fields: [jobId], references: [id])
+
+  status      ApplicationStatus @default(APPLIED)
+  notes       String?
+
+  appliedAt   DateTime @default(now()) @map("applied_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@unique([studentId, jobId])
+  @@map("applications")
+}
+
+// ─── Review Overrides (append-only) ──────────────────────────────
+
+model ReviewOverride {
+  id           String     @id @default(uuid())
+  evaluationId String     @map("evaluation_id")
+  evaluation   Evaluation @relation(fields: [evaluationId], references: [id])
+  actorId      String     @map("actor_id")
+  actor        User       @relation("OverrideActor", fields: [actorId], references: [id])
+
+  decision     String     // shortlist | reject | review | promote
+  reason       String
+  createdAt    DateTime   @default(now()) @map("created_at")
+
+  @@map("review_overrides")
+}
+
+// ─── Audit Events (append-only) ──────────────────────────────────
+
+model AuditEvent {
+  id           String   @id @default(uuid())
+  actorId      String?  @map("actor_id")
+  actor        User?    @relation(fields: [actorId], references: [id])
+
+  action       String
+  resourceType String   @map("resource_type")
+  resourceId   String   @map("resource_id")
+  requestId    String?  @map("request_id")
+  metadata     Json?    // redacted where necessary
+
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("audit_events")
+}
