@@ -24,6 +24,23 @@ const loginSchema = z.object({
   password: z.string().min(6),
 });
 
+// Failed logins are audited (never the password). Best-effort: an audit
+// failure must not mask the 401.
+async function logFailedLogin(userId: string | null, email: string): Promise<void> {
+  try {
+    await prisma.auditEvent.create({
+      data: {
+        actorId: userId,
+        action: 'AUTH_LOGIN_FAILED',
+        resourceType: 'user',
+        resourceId: userId ?? email.toLowerCase(),
+      },
+    });
+  } catch (error) {
+    console.error('[AUTH_AUDIT_ERROR]', error);
+  }
+}
+
 function signAccess(payload: TokenPayload): Promise<string> {
   return signToken(payload, JWT_SECRET, ACCESS_TOKEN_TTL_SECONDS);
 }
@@ -63,16 +80,19 @@ export async function POST(request: NextRequest) {
     });
 
     if (!user) {
+      await logFailedLogin(null, email);
       return unauthorizedError('Invalid credentials');
     }
 
     if (user.status !== 'ACTIVE') {
+      await logFailedLogin(user.id, email);
       return unauthorizedError('Account is not active');
     }
 
     // Verify password
     const valid = await bcrypt.compare(password, user.passwordHash);
     if (!valid) {
+      await logFailedLogin(user.id, email);
       return unauthorizedError('Invalid credentials');
     }
 
