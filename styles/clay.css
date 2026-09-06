@@ -1,0 +1,78 @@
+/*
+ * PeerSphere Clay System
+ * Claymorphism utilities — applied only to interactive/tactile elements:
+ * primary buttons, toggles, badges, chips. Overlay surfaces use glass.css;
+ * static content uses opaque surfaces from tokens.css.
+ */
+
+/* ─── Clay — base surface ────────────────────────────────────────── */
+.clay {
+  background:    var(--ps-clay-bg);
+  color:         var(--ps-clay-text);
+  border:        none;
+  border-radius: var(--ps-clay-radius);
+  box-shadow:    var(--ps-clay-shadow);
+}
+
+/* Accent variant — the one primary action per screen */
+.clay-accent {
+  background: var(--ps-clay-accent-bg);
+  color:      var(--ps-clay-accent-text);
+  box-shadow: var(--ps-clay-accent-shadow);
+}
+
+/* ─── Clay — interactive (hover lift, pressed inset) ─────────────── */
+.clay-interactive {
+  cursor: pointer;
+  transition:
+    transform var(--ps-dur-micro) var(--ps-ease-out),
+    box-shadow var(--ps-dur-micro) var(--ps-ease-out),
+    filter var(--ps-dur-micro) var(--ps-ease-out);
+}
+
+.clay-interactive:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.03);
+}
+
+.clay-interactive:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: var(--ps-clay-shadow-pressed);
+}
+
+.clay-accent.clay-interactive:active:not(:disabled) {
+  box-shadow: var(--ps-clay-accent-shadow-pressed);
+}
+
+.clay-interactive:focus-visible {
+  outline: none;
+  box-shadow: var(--ps-focus-ring), var(--ps-clay-shadow);
+}
+
+.clay-accent.clay-interactive:focus-visible {
+  box-shadow: var(--ps-focus-ring), var(--ps-clay-accent-shadow);
+}
+
+.clay-interactive:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+/* ─── Clay — chip (compact pill: badges, skill tags, priorities) ─── */
+.clay-chip {
+  background:    var(--ps-clay-bg);
+  color:         var(--ps-clay-text);
+  border:        none;
+  border-radius: var(--ps-clay-radius-chip);
+  box-shadow:    var(--ps-clay-shadow);
+}
+
+/* ─── Reduced motion: keep the state change, drop the movement ───── */
+@media (prefers-reduced-motion: reduce) {
+  .clay-interactive,
+  .clay-interactive:hover:not(:disabled),
+  .clay-interactive:active:not(:disabled) {
+    transition: none;
+    transform: none;
+  }
+}

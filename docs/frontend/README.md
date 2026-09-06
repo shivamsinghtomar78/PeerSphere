@@ -4,6 +4,10 @@
 
 This directory is the implementation contract for the PeerSphere web experience. It defines what users see and do; it does not define matching algorithms, backend implementation, or infrastructure.
 
+> **Design system:** the glass × clay × minimalist rules, decision table, token
+> inventory, and QA checklist live in [design-system.md](design-system.md).
+> Preview all primitives at `/dev/design` (development builds).
+
 ## Required Technology Stack
 
 | Layer | Decision |
