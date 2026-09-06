@@ -39,10 +39,18 @@ const createJobSchema = z.object({
 
 // ─── Routes ───────────────────────────────────────────────────────
 
-// GET /jobs — list jobs (public)
+// GET /jobs — list jobs (public shows PUBLISHED only; other statuses are admin-only)
 export async function GET(request: NextRequest) {
   try {
     const query = listJobsSchema.parse(Object.fromEntries(request.nextUrl.searchParams));
+
+    if (query.status && query.status !== 'PUBLISHED') {
+      const user = getAuthUser(request);
+      if (!user || user.role !== 'PLACEMENT_ADMIN') {
+        return forbiddenError('Only placement admins can list unpublished jobs');
+      }
+    }
+
     const data = await jobsService.listJobs(query);
     return successResponse(data);
   } catch (error: any) {
