@@ -82,6 +82,11 @@ export const conflictError = (message: string): NextResponse => {
   return errorResponse(409, 'CONFLICT', message);
 };
 
+// Rate limited
+export const rateLimitedError = (message: string = 'Too many requests, try again later'): NextResponse => {
+  return errorResponse(429, 'RATE_LIMITED', message);
+};
+
 // Internal server error
 export const internalError = (message: string = 'Internal server error'): NextResponse => {
   return errorResponse(500, 'INTERNAL_ERROR', message);

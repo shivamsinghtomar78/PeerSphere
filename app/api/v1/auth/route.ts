@@ -7,7 +7,9 @@ import {
   badRequestError,
   unauthorizedError,
   internalError,
+  rateLimitedError,
 } from '@/lib/api/response';
+import { checkRateLimit, clientKeyFromHeaders } from '@/lib/auth/rate-limit';
 import { signToken, TokenPayload } from '@/lib/auth/jwt';
 import {
   JWT_SECRET,
@@ -47,6 +49,11 @@ export async function GET() {
 // POST /auth/login
 export async function POST(request: NextRequest) {
   try {
+    // Throttle credential stuffing: 10 attempts/min per client
+    if (!checkRateLimit(`login:${clientKeyFromHeaders(request.headers)}`, 10, 60_000)) {
+      return rateLimitedError('Too many login attempts, try again in a minute');
+    }
+
     const body = await request.json();
     const { email, password } = loginSchema.parse(body);
 

@@ -15,6 +15,7 @@
     "db:push": "prisma db push",
     "test": "jest --runInBand",
     "test:watch": "jest --watch",
+    "test:security": "jest --runInBand __tests__/security",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

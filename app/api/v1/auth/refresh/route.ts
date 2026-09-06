@@ -6,7 +6,9 @@ import {
   badRequestError,
   unauthorizedError,
   internalError,
+  rateLimitedError,
 } from '@/lib/api/response';
+import { checkRateLimit, clientKeyFromHeaders } from '@/lib/auth/rate-limit';
 import { signToken, verifyToken, TokenPayload } from '@/lib/auth/jwt';
 import {
   JWT_SECRET,
@@ -23,6 +25,11 @@ const refreshSchema = z.object({
 // POST /auth/refresh
 export async function POST(request: NextRequest) {
   try {
+    // Higher threshold than login — legitimate clients refresh periodically
+    if (!checkRateLimit(`refresh:${clientKeyFromHeaders(request.headers)}`, 30, 60_000)) {
+      return rateLimitedError('Too many refresh attempts, try again in a minute');
+    }
+
     const body = await request.json();
     const { refreshToken } = refreshSchema.parse(body);
 
