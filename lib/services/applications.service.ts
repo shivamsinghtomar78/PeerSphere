@@ -83,28 +83,39 @@ const VALID_TRANSITIONS: Record<string, ApplicationStatus[]> = {
     ApplicationStatus.UNDER_REVIEW,
     ApplicationStatus.SHORTLISTED,
     ApplicationStatus.REJECTED,
+    ApplicationStatus.WITHDRAWN,
   ],
   UNDER_REVIEW: [
     ApplicationStatus.SHORTLISTED,
     ApplicationStatus.REJECTED,
+    ApplicationStatus.WITHDRAWN,
   ],
   SHORTLISTED: [
     ApplicationStatus.APPLIED,
     ApplicationStatus.INTERVIEW_SCHEDULED,
     ApplicationStatus.REJECTED,
+    ApplicationStatus.WITHDRAWN,
   ],
   INTERVIEW_SCHEDULED: [
     ApplicationStatus.OFFER_EXTENDED,
     ApplicationStatus.REJECTED,
+    ApplicationStatus.WITHDRAWN,
   ],
   OFFER_EXTENDED: [
     ApplicationStatus.OFFER_ACCEPTED,
     ApplicationStatus.REJECTED,
+    ApplicationStatus.WITHDRAWN,
   ],
+  // Terminal states
   OFFER_ACCEPTED: [],
   REJECTED: [],
   WITHDRAWN: [],
 };
+
+/** Statuses a STUDENT may set on their own application; admins use the full map. */
+export const STUDENT_ALLOWED_TARGET_STATUSES: ApplicationStatus[] = [
+  ApplicationStatus.WITHDRAWN,
+];
 
 // ─── Service functions ────────────────────────────────────────────────────────
 
@@ -273,10 +284,10 @@ export async function updateApplicationStatus(
   });
   if (!application) throw new ApiError(404, 'NOT_FOUND', 'Application');
 
-  // Enforce valid transitions
+  // Enforce valid transitions — an illegal jump is a state conflict (409)
   const allowed = VALID_TRANSITIONS[application.status] ?? [];
   if (!allowed.includes(targetStatus)) {
-    throw new ApiError(400, 'BAD_REQUEST',
+    throw new ApiError(409, 'CONFLICT',
       `Cannot transition from ${application.status} to ${targetStatus}`,
     );
   }
