@@ -14,26 +14,30 @@ Institutional placement platform built as a **unified Next.js 16 app** (App Rout
 
 ## Quick Start
 
-### 1. Start the database (local portable PostgreSQL 16)
+### 1. Database (Neon hosted PostgreSQL)
 
-```powershell
-schtasks.exe /run /tn "PeerSpherePostgres"     # starts .pgsql\start-pg.cmd (port 5432)
+The app uses a [Neon](https://neon.tech) PostgreSQL database. Put the **pooled**
+connection string (hostname contains `-pooler`, keep `?sslmode=require`) in `.env`:
+
+```dotenv
+DATABASE_URL="postgresql://<user>:<password>@<endpoint>-pooler.<region>.aws.neon.tech/<db>?sslmode=require"
 ```
 
-If the scheduled task does not exist, run once:
-```powershell
-& ".\pgsql\start-pg.cmd"   # keep this window open
-```
+(A local PostgreSQL 16 works too — any `DATABASE_URL` pointing at Postgres 16.)
 
 ### 2. Configure & seed
 
 ```powershell
-Copy-Item .env.example .env     # or use the existing .env
+Copy-Item .env.example .env     # then fill DATABASE_URL + JWT secrets (openssl rand -hex 32)
 npm install
 npx prisma generate
-npx prisma db push              # schema sync
+npx prisma migrate deploy       # applies prisma/migrations/ to a fresh DB
 npm run db:seed                 # idempotent seed via tsx
 ```
+
+Schema changes during development: edit `prisma/schema.prisma`, apply with
+`npx prisma db push`, then regenerate the baseline diff into `prisma/migrations/`
+(Neon's pooled connection can't host `prisma migrate dev`'s shadow database).
 
 ### 3. Run
 

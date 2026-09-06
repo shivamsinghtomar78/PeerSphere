@@ -307,6 +307,11 @@ model Evaluation {
   recommendations    Recommendation[]
   overrides          ReviewOverride[]
 
+  // Hot paths: student history (listStudentEvaluations), ranked candidates
+  // per job version (listJobEvaluations), idempotent queue lookup by hash
+  @@index([studentId, createdAt])
+  @@index([jobVersionId, overallScore])
+  @@index([snapshotHash])
   @@map("evaluations")
 }
 
@@ -325,6 +330,8 @@ model RequirementMatch {
   contribution    Float           @default(0) // score contribution 0-1
   explanation     String?
 
+  // Analytics groups MISSING matches by requirement (skill-gap stats)
+  @@index([matchState])
   @@map("requirement_matches")
 }
 
@@ -362,7 +369,10 @@ model Application {
   appliedAt   DateTime @default(now()) @map("applied_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
+  // Admin lists filter by job and/or status, ordered by appliedAt
   @@unique([studentId, jobId])
+  @@index([jobId, status])
+  @@index([status, appliedAt])
   @@map("applications")
 }
 
@@ -397,5 +407,8 @@ model AuditEvent {
 
   createdAt    DateTime @default(now()) @map("created_at")
 
+  // Audit log is listed newest-first, filterable by resource
+  @@index([resourceType, resourceId, createdAt])
+  @@index([createdAt])
   @@map("audit_events")
 }
