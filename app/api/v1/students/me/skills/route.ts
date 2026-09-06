@@ -8,6 +8,7 @@ import {
   unauthorizedError,
   forbiddenError,
   notFoundError,
+  conflictError,
   internalError,
 } from '@/lib/api/response';
 import { ApiError } from '@/lib/errors/api-error';
@@ -59,7 +60,7 @@ export async function POST(request: NextRequest) {
     if (error instanceof ApiError) {
       if (error.statusCode === 400) return badRequestError(error.message);
       if (error.statusCode === 404) return notFoundError('Student profile');
-      if (error.statusCode === 409) return badRequestError(error.message);
+      if (error.statusCode === 409) return conflictError(error.message);
     }
     console.error('[STUDENTS_ME_SKILLS_POST_ERROR]', error);
     return internalError();
