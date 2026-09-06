@@ -2,6 +2,8 @@ version: '3.9'
 
 services:
   # ── PostgreSQL ────────────────────────────────────────────────────
+  # Development database for the unified PeerSphere Next.js app.
+  # The app runs locally (npm run dev) and connects via DATABASE_URL.
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
@@ -19,50 +21,5 @@ services:
       timeout: 5s
       retries: 5
 
-  # ── API (Node.js/TypeScript) ──────────────────────────────────────
-  api:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
-    environment:
-      DATABASE_URL: postgresql://peersphere:peersphere@postgres:5432/peersphere_dev
-      JWT_SECRET: dev-jwt-secret-change-in-production
-      JWT_EXPIRES_IN: 15m
-      JWT_REFRESH_SECRET: dev-refresh-secret-change-in-production
-      JWT_REFRESH_EXPIRES_IN: 7d
-      PORT: 4000
-      NODE_ENV: development
-      CORS_ORIGIN: http://localhost:3000
-      UPLOAD_DIR: /app/uploads
-      MAX_FILE_SIZE_MB: 5
-    ports:
-      - '4000:4000'
-    volumes:
-      - uploads_data:/app/uploads
-    healthcheck:
-      test: ['CMD-SHELL', 'curl -f http://localhost:4000/health || exit 1']
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # ── Frontend (Next.js) ────────────────────────────────────────────
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    depends_on:
-      api:
-        condition: service_healthy
-    environment:
-      NEXT_PUBLIC_API_URL: http://localhost:4000/api/v1
-    ports:
-      - '3000:3000'
-
 volumes:
   postgres_data:
-  uploads_data:

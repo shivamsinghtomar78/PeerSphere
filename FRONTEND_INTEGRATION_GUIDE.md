@@ -2,7 +2,9 @@
 
 ## Overview
 
-This guide documents the frontend-backend integration that has been implemented for PeerSphere. The backend API was already complete, and we've now added the necessary infrastructure to connect the frontend to the backend.
+This guide documents the frontend-backend integration for PeerSphere. The project is a **unified Next.js 16 app** (no separate `frontend/` or `backend/` directories) — API routes live under `app/api/v1/`, business logic in `lib/services/`, and the frontend talks to them via relative paths (`/api/v1/...`).
+
+> **Note:** This guide was originally written during the migration from a separate Express backend. The hook/library examples below remain valid; the file paths have since been unified — see [MIGRATION_STATUS.md](./MIGRATION_STATUS.md) for the current layout and [UNIFIED_MIGRATION_COMPLETE.md](./UNIFIED_MIGRATION_COMPLETE.md) for the endpoint inventory.
 
 ## What Was Implemented
 
@@ -273,14 +275,17 @@ export default function JobListWithPagination() {
 }
 ```
 
-## File Structure
+## File Structure (current)
 
 ```
-frontend/src/
+src/
 ├── lib/
-│   ├── api-client.ts      # Axios instance with interceptors
+│   ├── api-client.ts      # Axios instance with interceptors (relative /api/v1 base)
 │   ├── auth.ts            # Auth utility functions
-│   └── theme-context.tsx  # Existing theme context
+│   └── theme-context.tsx  # Theme context (light/dark)
+├── services/
+│   ├── student-api.ts     # Student-facing API functions
+│   └── placement-api.ts   # Placement-admin API functions
 ├── context/
 │   └── AuthContext.tsx    # Auth state context
 ├── hooks/
@@ -288,56 +293,59 @@ frontend/src/
 │   ├── useApi.ts          # API request hooks
 │   └── useAuth.ts         # Auth-related hooks
 ├── components/
-│   └── auth/
-│       ├── index.ts      # Re-exports auth components
-│       └── ProtectedRoute.tsx  # Route protection components
+│   ├── auth/              # Route protection components
+│   ├── ui/                # GlassButton, GlassCard, GlassInput, GlassDialog, ...
+│   ├── product/           # JobCard, CandidateCard, MatchScore, SkillChip, ...
+│   └── layout/            # AppShell, Navigation, ThemeSwitcher
 ├── app/
-│   ├── layout.tsx        # Root layout with AuthProvider
+│   ├── api/v1/...         # API routes (auth, students, jobs, applications, ...)
+│   ├── layout.tsx         # Root layout with AuthProvider + ToastProvider
 │   ├── (student)/layout.tsx   # Student layout with role check
 │   ├── (placement)/layout.tsx # Placement layout with role check
-│   └── auth/page.tsx     # Login page with real API calls
-└── package.json          # Added axios dependency
+│   └── auth/page.tsx      # Login page with real API calls
+└── package.json           # axios, next, react, prisma, zod, ...
 ```
 
 ## Environment Variables
 
-The frontend expects the following environment variable:
+The unified app reads the following from `.env` (project root):
 
 ```
-NEXT_PUBLIC_API_URL=http://localhost:4000/api/v1
+DATABASE_URL=postgresql://peersphere:peersphere@127.0.0.1:5432/peersphere_dev
+JWT_SECRET=...
+JWT_REFRESH_SECRET=...
+NEXT_PUBLIC_API_URL=/api/v1
+UPLOAD_DIR=./uploads
+MAX_FILE_SIZE_MB=5
 ```
 
-This is automatically configured in the docker-compose.yml file.
+`NEXT_PUBLIC_API_URL` defaults to `/api/v1` (same-origin, no CORS).
 
 ## Dependencies Added
 
 - `axios` (^1.7.7) - HTTP client for API requests
 
-## Next Steps
+## Next Steps — ✅ COMPLETE (2026-08-17)
 
-To complete the frontend-backend integration:
+The integration is complete and verified. To run the unified app:
 
-1. **Run the backend server** to test the API:
+1. **Start PostgreSQL** (portable instance):
    ```bash
-   cd backend
-   npm run dev
+   schtasks.exe /run /tn "PeerSpherePostgres"
    ```
 
-2. **Seed the database** (if not already done):
+2. **Seed the database** (idempotent):
    ```bash
-   npm run db:generate
-   npm run db:migrate
-   npm run db:seed
+   npm run db:seed        # tsx prisma/seed.ts
    ```
 
-3. **Run the frontend** to test the integration:
+3. **Run the app**:
    ```bash
-   cd frontend
-   npm install  # Install axios
-   npm run dev
+   npm install
+   npm run dev            # http://localhost:3000
    ```
 
-4. **Integrate remaining pages** by replacing mock data with real API calls using the hooks described above.
+4. **Verify**: `npm run lint`, `npx tsc --noEmit`, then log in with the demo credentials below.
 
 ## Backend API Reference
 
@@ -409,5 +417,5 @@ These credentials are created by the database seed script and match the backend'
 - All API requests automatically include the Authorization header with the JWT token
 - The token is automatically refreshed when it expires (401 responses)
 - Auth state is persisted in localStorage for session persistence
-- The backend is already complete and production-ready
-- The frontend now has the foundation to connect to all backend endpoints
+- API routes are authenticated by `middleware.ts` (Web Crypto JWT verification); only `/api/v1/auth*` and the `/api/v1/jobs` list are public
+- All business logic lives in `lib/services/` and is exercised by the seed script (`prisma/seed.ts`)

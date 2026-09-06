@@ -32,4 +32,10 @@ The visual principles are adapted—not copied—from [Liquid Glass Widgets](htt
 
 ## Status
 
-This is a planning specification. Its checklists are pending until the Next.js application and evidence-based tests exist.
+This specification is **implemented and verified** in the unified Next.js 16 app (2026-08-17). See [development-status.md](./development-status.md) for the phase-by-phase record, and root-level `FRONTEND_INTEGRATION_GUIDE.md` / `MIGRATION_STATUS.md` for API wiring details.
+
+Implementation deltas vs. this spec (intentional):
+- Animation: CSS keyframes/transitions (Framer Motion not added) with `prefers-reduced-motion` support.
+- Icons: inline SVG path set (Lucide-style) via a shared `NavIcon`/utility pattern.
+- Charts: Recharts for analytics bar charts.
+- Glassmorphism: `styles/glass.css` + `styles/tokens.css` (light/dark via `data-theme`).

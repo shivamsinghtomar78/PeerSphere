@@ -1,0 +1,32 @@
+# ── Dependencies ────────────────────────────────────────────────
+node_modules/
+
+# ── Next.js ─────────────────────────────────────────────────────
+.next/
+out/
+build/
+tsconfig.tsbuildinfo
+next-env.d.ts
+
+# ── Environment & secrets ───────────────────────────────────────
+.env
+.env.*
+!.env.example
+peersphere-1be33-firebase-adminsdk-fbsvc-d6754d5265.json
+*-adminsdk-*.json
+
+# ── Local PostgreSQL (portable dev cluster) ─────────────────────
+.pgsql/
+uploads/
+postgres.log
+
+# ── Testing / tooling ───────────────────────────────────────────
+coverage/
+playwright-report/
+test-results/
+
+# ── Logs & OS junk ──────────────────────────────────────────────
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db

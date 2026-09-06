@@ -22,6 +22,10 @@
 | **Phase 16** | Skeleton Loading States | ✅ DONE | `Skeleton.tsx` with 5 exports: `Skeleton`, `SkeletonText`, `SkeletonCard`, `SkeletonTableRow`, `SkeletonStatRow`. Used in Student Roster with 500ms simulated load. |
 | **Phase 17** | 404 Not-Found Pages | ✅ DONE | Root `/not-found.tsx` (standalone) + `(student)/not-found.tsx` + `(placement)/not-found.tsx` (both wrapped in AppShell). Accessible h1, design-system styling, portal links. |
 | **Phase 18** | Expanded Mock Data | ✅ DONE | 5 match results (Arjun 72%, Priya 94%, Rohan 48%, Anika 91%, Vikram 68%), 5 applications, 5 ranked candidates. Richer demo coverage. |
+| **Phase 19** | Backend Wiring (Unified Next.js API) | ✅ DONE | All pages consume real APIs via `services/student-api.ts` + `services/placement-api.ts`: auth, profile (skills add/remove, resume upload/download), jobs (apply, publish/close), applications (shortlist toggle, CSV export), candidates (real match scores/eligibility), evaluations detail, analytics, reports. |
+| **Phase 20** | Responsive Hardening | ✅ DONE | `GlassDialog` scroll-safe on small viewports (independent body scroll, dvh max-height), `Toast` full-width gutter ≤480px + z-index token, `GlassTabs` horizontal scroll rail, touch targets ≥44px on coarse pointers, iOS zoom prevention (16px inputs), safe-area insets for bottom nav, `no-scrollbar` utility. Verified breakpoints: 320 / 375 / 768 / 1024 / 1440. |
+| **Phase 21** | PWA — Installable + Offline Shell | ✅ DONE | `app/manifest.ts` (standalone display, icons incl. maskable), `public/sw.js` (network-first navigations, stale-while-revalidate static, API never cached), `RegisterSW` (production only), `viewport-fit=cover` + theme-color. Manifest/sw.js/icons verified served with correct MIME types. |
 
 ---
-*Last verified: 2026-08-16 | Build status: PASSING (Exit Code 0) | Routes: 20 | Components: 47 TSX files*
+
+*Last verified: 2026-08-17 | Lint: 0 errors | Typecheck: 0 errors | Endpoints smoke-tested (student + admin) | DB: PostgreSQL 16.15 seeded (5 jobs, 7 applications, 7 engine evaluations)*
