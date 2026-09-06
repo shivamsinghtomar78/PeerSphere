@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 import { prisma } from '@/lib/db/prisma';
 import {
@@ -9,34 +8,26 @@ import {
   unauthorizedError,
   internalError,
 } from '@/lib/api/response';
+import { signToken, TokenPayload } from '@/lib/auth/jwt';
+import {
+  JWT_SECRET,
+  JWT_REFRESH_SECRET,
+  ACCESS_TOKEN_TTL_SECONDS,
+  REFRESH_TOKEN_TTL_SECONDS,
+} from '@/lib/auth/env';
 
-// Validation schemas
+// Validation schema
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
 });
 
-const refreshSchema = z.object({
-  refreshToken: z.string().min(1),
-});
-
-// JWT configuration
-const SALT_ROUNDS = 12;
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key';
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '15m';
-const JWT_REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
-
-function signAccess(payload: { userId: string; role: string }): string {
-  return jwt.sign(payload, JWT_SECRET, {
-    expiresIn: JWT_EXPIRES_IN,
-  } as jwt.SignOptions);
+function signAccess(payload: TokenPayload): Promise<string> {
+  return signToken(payload, JWT_SECRET, ACCESS_TOKEN_TTL_SECONDS);
 }
 
-function signRefresh(payload: { userId: string; role: string }): string {
-  return jwt.sign(payload, JWT_REFRESH_SECRET, {
-    expiresIn: JWT_REFRESH_EXPIRES_IN,
-  } as jwt.SignOptions);
+function signRefresh(payload: TokenPayload): Promise<string> {
+  return signToken(payload, JWT_REFRESH_SECRET, REFRESH_TOKEN_TTL_SECONDS);
 }
 
 // GET handler
@@ -79,9 +70,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate tokens
-    const payload = { userId: user.id, role: user.role };
-    const accessToken = signAccess(payload);
-    const refreshToken = signRefresh(payload);
+    const payload: TokenPayload = { userId: user.id, role: user.role };
+    const accessToken = await signAccess(payload);
+    const refreshToken = await signRefresh(payload);
 
     return successResponse({
       accessToken,
@@ -100,6 +91,3 @@ export async function POST(request: NextRequest) {
     return internalError('Login failed');
   }
 }
-
-// Handle refresh token - separate route file
-export { refreshSchema, JWT_SECRET, JWT_REFRESH_SECRET, JWT_EXPIRES_IN, JWT_REFRESH_EXPIRES_IN, signAccess, signRefresh };

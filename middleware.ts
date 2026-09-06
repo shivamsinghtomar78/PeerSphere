@@ -1,12 +1,8 @@
 import { NextResponse, NextRequest } from 'next/server';
+import { verifyToken, TokenPayload } from '@/lib/auth/jwt';
+import { JWT_SECRET } from '@/lib/auth/env';
 
-export type AuthPayload = {
-  userId: string;
-  role: 'STUDENT' | 'PLACEMENT_ADMIN';
-};
-
-// Configuration
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+export type AuthPayload = TokenPayload;
 
 // Public (route, method) pairs. Everything else under /api/v1/* requires a
 // valid token regardless of HTTP method. Paths match exactly — sub-routes of
@@ -27,57 +23,6 @@ const extractToken = (request: NextRequest): string | null => {
     return null;
   }
   return authHeader.slice(7);
-};
-
-// Verify JWT token using Web Crypto (HMAC-SHA256) — works in both Edge and Node runtimes
-const verifyToken = async (token: string, secret: string): Promise<AuthPayload | null> => {
-  try {
-    const parts = token.split('.');
-    if (parts.length !== 3) return null;
-
-    const [header, payload, signature] = parts;
-    const data = `${header}.${payload}`;
-
-    // Reject tokens not signed with HS256
-    let parsedHeader: { alg?: string } = {};
-    try {
-      parsedHeader = JSON.parse(atob(header.replace(/-/g, '+').replace(/_/g, '/')) as string);
-    } catch {
-      return null;
-    }
-    if (parsedHeader.alg !== 'HS256') return null;
-
-    const encoder = new TextEncoder();
-    const key = await crypto.subtle.importKey(
-      'raw',
-      encoder.encode(secret),
-      { name: 'HMAC', hash: 'SHA-256' },
-      false,
-      ['verify']
-    );
-
-    const sigBytes = Uint8Array.from(
-      atob(signature.replace(/-/g, '+').replace(/_/g, '/')),
-      (c) => c.charCodeAt(0)
-    );
-    const dataBytes = encoder.encode(data);
-
-    const valid = await crypto.subtle.verify('HMAC', key, sigBytes, dataBytes);
-    if (!valid) return null;
-
-    const payloadJson = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')) as string) as {
-      userId?: string;
-      role?: 'STUDENT' | 'PLACEMENT_ADMIN';
-      exp?: number;
-    };
-
-    if (!payloadJson.userId || !payloadJson.role) return null;
-    if (payloadJson.exp && payloadJson.exp * 1000 < Date.now()) return null;
-
-    return { userId: payloadJson.userId, role: payloadJson.role };
-  } catch {
-    return null;
-  }
 };
 
 // Middleware to authenticate requests

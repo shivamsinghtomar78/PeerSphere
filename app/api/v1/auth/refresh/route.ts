@@ -1,5 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
-import jwt from 'jsonwebtoken';
+import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db/prisma';
 import {
@@ -8,7 +7,13 @@ import {
   unauthorizedError,
   internalError,
 } from '@/lib/api/response';
-import { JWT_SECRET, JWT_REFRESH_SECRET, signAccess, signRefresh } from '../route';
+import { signToken, verifyToken, TokenPayload } from '@/lib/auth/jwt';
+import {
+  JWT_SECRET,
+  JWT_REFRESH_SECRET,
+  ACCESS_TOKEN_TTL_SECONDS,
+  REFRESH_TOKEN_TTL_SECONDS,
+} from '@/lib/auth/env';
 
 // Validation schema
 const refreshSchema = z.object({
@@ -21,14 +26,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { refreshToken } = refreshSchema.parse(body);
 
-    // Verify refresh token
-    let payload: { userId: string; role: string };
-    try {
-      payload = jwt.verify(refreshToken, JWT_REFRESH_SECRET) as {
-        userId: string;
-        role: string;
-      };
-    } catch {
+    // Verify refresh token (refresh secret — an access token must not pass here)
+    const payload = await verifyToken(refreshToken, JWT_REFRESH_SECRET);
+    if (!payload) {
       return unauthorizedError('Refresh token invalid or expired');
     }
 
@@ -42,9 +42,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate new tokens
-    const newPayload = { userId: user.id, role: user.role };
-    const accessToken = signAccess(newPayload);
-    const newRefreshToken = signRefresh(newPayload);
+    const newPayload: TokenPayload = { userId: user.id, role: user.role };
+    const accessToken = await signToken(newPayload, JWT_SECRET, ACCESS_TOKEN_TTL_SECONDS);
+    const newRefreshToken = await signToken(
+      newPayload,
+      JWT_REFRESH_SECRET,
+      REFRESH_TOKEN_TTL_SECONDS
+    );
 
     return successResponse({
       accessToken,
