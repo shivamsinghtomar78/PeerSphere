@@ -5,33 +5,20 @@ export type AuthPayload = {
   role: 'STUDENT' | 'PLACEMENT_ADMIN';
 };
 
-export type AuthRequest = NextRequest & {
-  user?: AuthPayload;
-};
-
 // Configuration
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
-// Public routes that don't require authentication.
-// Convention: entries WITHOUT a trailing slash match only the exact path;
-// entries WITH a trailing slash match the path and everything under it.
-// The jobs list is public, but /api/v1/jobs/<anything> must stay protected
-// (detail, applications, evaluations, publish, close, apply).
-const PUBLIC_ROUTES = [
-  '/api/v1/auth',
-  '/api/v1/auth/',
-  '/api/v1/jobs',
+// Public (route, method) pairs. Everything else under /api/v1/* requires a
+// valid token regardless of HTTP method. Paths match exactly — sub-routes of
+// a public path (e.g. /api/v1/jobs/[jobId]) are NOT public.
+const PUBLIC_ROUTES: ReadonlyArray<{ path: string; method: string }> = [
+  { path: '/api/v1/auth', method: 'POST' },
+  { path: '/api/v1/auth/refresh', method: 'POST' },
+  { path: '/api/v1/jobs', method: 'GET' },
 ];
 
-// Routes that are completely public (no auth needed)
-const isPublicRoute = (pathname: string) => {
-  return PUBLIC_ROUTES.some(route => {
-    if (route.endsWith('/')) {
-      return pathname.startsWith(route);
-    }
-    return pathname === route;
-  });
-};
+const isPublicRoute = (pathname: string, method: string): boolean =>
+  PUBLIC_ROUTES.some((r) => r.path === pathname && r.method === method);
 
 // Extract token from Authorization header
 const extractToken = (request: NextRequest): string | null => {
@@ -102,30 +89,29 @@ export const authenticate = (request: NextRequest): Promise<AuthPayload | null> 
   return verifyToken(token, JWT_SECRET);
 };
 
-// Middleware to check role
-export const requireRole = (requiredRoles: ('STUDENT' | 'PLACEMENT_ADMIN')[]) => {
-  return (request: NextRequest): Promise<boolean> => {
-    return authenticate(request).then((user) => {
-      if (!user) {
-        return false;
-      }
-      return requiredRoles.includes(user.role);
-    });
-  };
-};
-
 // Main middleware function
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
-  
-  // Skip authentication for public routes
-  if (isPublicRoute(pathname)) {
-    return NextResponse.next();
+
+  // SECURITY: x-user-id / x-user-role are trusted by API handlers (getAuthUser).
+  // They must only ever be set by this middleware from a verified token, so
+  // strip any client-supplied values on EVERY request — public routes included.
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.delete('x-user-id');
+  requestHeaders.delete('x-user-role');
+
+  // Public (path, method) pairs pass through with sanitized headers, no auth
+  if (isPublicRoute(pathname, request.method)) {
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
   }
-  
+
   // Authenticate the request
   const user = await authenticate(request);
-  
+
   if (!user) {
     // No valid token - return 401
     return new NextResponse(
@@ -139,36 +125,33 @@ export async function middleware(request: NextRequest) {
       { status: 401, headers: { 'Content-Type': 'application/json' } }
     );
   }
-  
-  // Attach user to request headers (for API routes to access)
-  const requestHeaders = new Headers(request.headers);
+
+  // Attach the verified identity onto the sanitized headers
   requestHeaders.set('x-user-id', user.userId);
   requestHeaders.set('x-user-role', user.role);
-  
-  const response = NextResponse.next({
+
+  return NextResponse.next({
     request: {
       headers: requestHeaders,
     },
   });
-  
-  return response;
 }
 
 // Export for use in API routes
 export const getAuthUser = (request: NextRequest): AuthPayload | null => {
   const userId = request.headers.get('x-user-id');
   const userRole = request.headers.get('x-user-role');
-  
+
   if (!userId || !userRole) {
     return null;
   }
-  
+
   // Validate role
   const validRoles: ('STUDENT' | 'PLACEMENT_ADMIN')[] = ['STUDENT', 'PLACEMENT_ADMIN'];
   if (!validRoles.includes(userRole as 'STUDENT' | 'PLACEMENT_ADMIN')) {
     return null;
   }
-  
+
   return {
     userId,
     role: userRole as 'STUDENT' | 'PLACEMENT_ADMIN',
