@@ -16,7 +16,8 @@
     "test": "jest --runInBand",
     "test:watch": "jest --watch",
     "test:security": "jest --runInBand __tests__/security",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "e2e": "playwright test"
   },
   "dependencies": {
     "@prisma/client": "5.22.0",

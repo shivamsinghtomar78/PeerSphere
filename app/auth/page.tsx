@@ -243,14 +243,17 @@ function RoleSelectScreen({ onSelect }: { onSelect: (role: Role) => void }) {
                 </ul>
               </div>
               <div className="pt-5 mt-4 border-t border-border-subtle">
-                <GlassButton
-                  variant={role === 'student' ? 'primary' : 'secondary'}
-                  size="md"
-                  fullWidth
-                  tabIndex={-1}
+                {/* Visual CTA only — the whole card is the button (no nested <button>) */}
+                <span
+                  aria-hidden
+                  className={
+                    role === 'student'
+                      ? 'inline-flex items-center justify-center w-full h-10 px-4 text-sm gap-2 font-medium rounded-sm bg-accent text-text-inverse shadow-sm group-hover:bg-accent-dark transition-base'
+                      : 'inline-flex items-center justify-center w-full h-10 px-4 text-sm gap-2 font-medium rounded-sm bg-surface-raised text-text border border-border shadow-sm group-hover:border-border-strong transition-base'
+                  }
                 >
                   Continue as {meta.label} →
-                </GlassButton>
+                </span>
               </div>
             </GlassCard>
           </button>
@@ -336,9 +339,10 @@ function CredentialsScreen({
 
           {/* Password field with show/hide toggle */}
           <div className="space-y-1">
-            <label className="text-sm font-medium text-text-muted block">Password</label>
+            <label htmlFor="auth-password" className="text-sm font-medium text-text-muted block">Password</label>
             <div className="relative">
               <input
+                id="auth-password"
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => onPasswordChange(e.target.value)}

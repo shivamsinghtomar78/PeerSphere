@@ -30,7 +30,7 @@ export interface AuthState {
  * Stores tokens and user data in localStorage
  */
 export const login = async (email: string, password: string): Promise<LoginResponse> => {
-  const response = await apiClient.post<ApiResponse<LoginResponse>>('/api/v1/auth', {
+  const response = await apiClient.post<ApiResponse<LoginResponse>>('/auth', {
     email,
     password,
   });
@@ -66,7 +66,7 @@ export const refreshToken = async (): Promise<{ accessToken: string; refreshToke
 
   try {
     const response = await apiClient.post<ApiResponse<{ accessToken: string; refreshToken: string }>>(
-      '/api/v1/auth/refresh',
+      '/auth/refresh',
       { refreshToken }
     );
 

@@ -3,7 +3,9 @@
 import axios, { AxiosError, AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 
 // API base URL - using relative paths for Next.js API routes
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
+// All call sites use un-prefixed paths ('/auth', '/students/me', …);
+// the /api/v1 prefix lives HERE and only here.
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
 
 // Storage keys for tokens
 const ACCESS_TOKEN_KEY = 'peersphere_access_token';
@@ -93,7 +95,7 @@ apiClient.interceptors.response.use(
       }
 
       try {
-        const response = await axios.post('/api/v1/auth/refresh', {
+        const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
           refreshToken,
         });
 
