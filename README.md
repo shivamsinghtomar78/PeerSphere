@@ -58,6 +58,8 @@ npx tsc --noEmit                # 0 errors expected
 | `npm run build` | Production build |
 | `npm run lint` | ESLint |
 | `npm run db:seed` | Reset-safe seed (`tsx prisma/seed.ts`) |
+| `npm test` | Jest unit/integration suites (`__tests__/`) |
+| `npm run test:watch` | Jest in watch mode |
 
 ## Documentation
 
