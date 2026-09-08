@@ -64,6 +64,8 @@ npx tsc --noEmit                # 0 errors expected
 | `npm run db:seed` | Reset-safe seed (`tsx prisma/seed.ts`) |
 | `npm test` | Jest unit/integration suites (`__tests__/`) |
 | `npm run test:watch` | Jest in watch mode |
+| `npm run test:security` | Auth/middleware security suite |
+| `npm run e2e` | Playwright e2e (boots its own dev server on :3100; run `npm run db:seed` first) |
 
 ## Documentation
 

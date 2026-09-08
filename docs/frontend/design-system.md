@@ -63,6 +63,9 @@ Executed 2026-09-07 (build + computed contrast; visual rows verified on `/dev/de
 | Contrast — dark: text on clay bg | ✅ 11.94:1 |
 | Contrast — dark: inverse text on accent clay | ✅ 5.85:1 |
 | Contrast — dark: muted text on surface | ✅ 5.34:1 |
+| Axe scans (WCAG 2.0/2.1 AA): landing, student dashboard+jobs, admin dashboard+candidates | ✅ 0 critical/serious (e2e/accessibility.spec.ts, 2026-09-08) |
+| GlassDialog keyboard: opens via button, Escape closes | ✅ automated |
+| Contrast retune 2026-09-08: muted 42%, faint 44%, success 28%, warning 31%, danger 47%, badge text uses -dark shades, active nav accent-dark | ✅ all ≥4.5:1 computed |
 | ClayButton: sm/md/lg, accent/neutral, disabled, loading render | ✅ on /dev/design |
 | ClayButton keyboard focus ring visible on both surfaces | ✅ `--ps-focus-ring` composited over clay shadow |
 | Pressed state uses inset shadow, respects `prefers-reduced-motion` | ✅ media query in clay.css |

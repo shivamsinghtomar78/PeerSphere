@@ -12,12 +12,14 @@ interface GlassBadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 }
 
 const variantClasses: Record<BadgeVariant, string> = {
+  // Text uses the -dark shade of each hue: the base shades sit under 4.5:1
+  // on their -light backgrounds (WCAG AA)
   default:  'bg-surface-raised text-text border-border',
-  success:  'bg-success-light text-success border-[var(--ps-success)]',
-  warning:  'bg-warning-light text-warning border-[var(--ps-warning)]',
-  danger:   'bg-danger-light text-danger border-[var(--ps-danger)]',
-  info:     'bg-info-light text-info border-[var(--ps-info)]',
-  accent:   'bg-accent-light text-accent border-[var(--ps-accent)]',
+  success:  'bg-success-light text-success-dark border-[var(--ps-success)]',
+  warning:  'bg-warning-light text-warning-dark border-[var(--ps-warning)]',
+  danger:   'bg-danger-light text-danger-dark border-[var(--ps-danger)]',
+  info:     'bg-info-light text-info-dark border-[var(--ps-info)]',
+  accent:   'bg-accent-light text-accent-dark border-[var(--ps-accent)]',
   muted:    'bg-canvas text-text-muted border-border-subtle',
 };
 

@@ -19,6 +19,13 @@ test.describe('student portal flow', () => {
     await page.waitForURL(/\/auth/, { timeout: 15_000 });
   });
 
+  test('role guard: student visiting /placement is redirected away', async ({ page }) => {
+    await login(page, STUDENT);
+    await page.goto('/placement');
+    // student never sees admin content — bounced to the student portal
+    await page.waitForURL(/\/student/, { timeout: 30_000 });
+  });
+
   test('browse jobs → open detail → apply → application listed', async ({ page }) => {
     await login(page, STUDENT);
 

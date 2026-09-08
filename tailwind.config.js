@@ -44,11 +44,27 @@ module.exports = {
           subtle: 'var(--ps-border-subtle)',
         },
         
-        // Semantic colors
-        success: 'var(--ps-success)',
-        warning: 'var(--ps-warning)',
-        danger: 'var(--ps-danger)',
-        info: 'var(--ps-info)',
+        // Semantic colors (light bg + dark text pairs satisfy WCAG AA)
+        success: {
+          DEFAULT: 'var(--ps-success)',
+          light: 'var(--ps-success-light)',
+          dark: 'var(--ps-success-dark)',
+        },
+        warning: {
+          DEFAULT: 'var(--ps-warning)',
+          light: 'var(--ps-warning-light)',
+          dark: 'var(--ps-warning-dark)',
+        },
+        danger: {
+          DEFAULT: 'var(--ps-danger)',
+          light: 'var(--ps-danger-light)',
+          dark: 'var(--ps-danger-dark)',
+        },
+        info: {
+          DEFAULT: 'var(--ps-info)',
+          light: 'var(--ps-info-light)',
+          dark: 'var(--ps-info-dark)',
+        },
         
         // Focus ring
         focus: 'var(--ps-focus)',

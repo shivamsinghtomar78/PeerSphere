@@ -22,8 +22,8 @@
 
   /* Text */
   --ps-text:            hsl(222 20% 10%);
-  --ps-text-muted:      hsl(220 10% 46%);
-  --ps-text-faint:      hsl(220 8% 64%);
+  --ps-text-muted:      hsl(220 10% 42%);
+  --ps-text-faint:      hsl(220 8% 44%);
   --ps-text-inverse:    hsl(0 0% 100%);
 
   /* Accent — one restrained institutional blue */
@@ -33,17 +33,17 @@
   --ps-accent-muted:    hsl(221 50% 70%);
 
   /* Semantic — Success */
-  --ps-success:         hsl(142 71% 35%);
+  --ps-success:         hsl(142 71% 28%);
   --ps-success-light:   hsl(142 71% 94%);
   --ps-success-dark:    hsl(142 71% 25%);
 
   /* Semantic — Warning */
-  --ps-warning:         hsl(38 92% 42%);
+  --ps-warning:         hsl(38 92% 31%);
   --ps-warning-light:   hsl(38 92% 94%);
   --ps-warning-dark:    hsl(38 92% 32%);
 
   /* Semantic — Danger */
-  --ps-danger:          hsl(0 72% 51%);
+  --ps-danger:          hsl(0 72% 47%);
   --ps-danger-light:    hsl(0 72% 95%);
   --ps-danger-dark:     hsl(0 72% 41%);
 
@@ -53,9 +53,9 @@
   --ps-info-dark:       hsl(199 89% 30%);
 
   /* Match status colors (accessible: always paired with label/icon) */
-  --ps-match-strong:    hsl(142 71% 35%);
-  --ps-match-partial:   hsl(38 92% 42%);
-  --ps-match-missing:   hsl(0 72% 51%);
+  --ps-match-strong:    hsl(142 71% 28%);
+  --ps-match-partial:   hsl(38 92% 31%);
+  --ps-match-missing:   hsl(0 72% 47%);
 
   /* Focus ring */
   --ps-focus:           hsl(221 83% 53%);
@@ -235,19 +235,19 @@
 
     --ps-success:         hsl(142 60% 50%);
     --ps-success-light:   hsla(142 60% 50% / 0.15);
-    --ps-success-dark:    hsl(142 60% 40%);
+    --ps-success-dark:    hsl(142 60% 62%);
 
     --ps-warning:         hsl(38 90% 55%);
     --ps-warning-light:   hsla(38 90% 55% / 0.15);
-    --ps-warning-dark:    hsl(38 90% 45%);
+    --ps-warning-dark:    hsl(38 90% 62%);
 
     --ps-danger:          hsl(0 80% 65%);
     --ps-danger-light:    hsla(0 80% 65% / 0.15);
-    --ps-danger-dark:     hsl(0 80% 55%);
+    --ps-danger-dark:     hsl(0 80% 72%);
 
     --ps-info:            hsl(199 85% 55%);
     --ps-info-light:      hsla(199 85% 55% / 0.15);
-    --ps-info-dark:       hsl(199 85% 45%);
+    --ps-info-dark:       hsl(199 85% 62%);
 
     --ps-match-strong:    hsl(142 60% 50%);
     --ps-match-partial:   hsl(38 90% 55%);
@@ -321,12 +321,16 @@
   --ps-accent-muted:    hsl(217 60% 50%);
   --ps-success:         hsl(142 60% 50%);
   --ps-success-light:   hsla(142 60% 50% / 0.15);
+  --ps-success-dark:    hsl(142 60% 62%);  /* text shade: brighter on dark */
   --ps-warning:         hsl(38 90% 55%);
   --ps-warning-light:   hsla(38 90% 55% / 0.15);
+  --ps-warning-dark:    hsl(38 90% 62%);
   --ps-danger:          hsl(0 80% 65%);
   --ps-danger-light:    hsla(0 80% 65% / 0.15);
+  --ps-danger-dark:     hsl(0 80% 72%);
   --ps-info:            hsl(199 85% 55%);
   --ps-info-light:      hsla(199 85% 55% / 0.15);
+  --ps-info-dark:       hsl(199 85% 62%);
   --ps-match-strong:    hsl(142 60% 50%);
   --ps-match-partial:   hsl(38 90% 55%);
   --ps-match-missing:   hsl(0 80% 65%);
@@ -378,8 +382,8 @@
   --ps-border-subtle:   hsl(220 13% 93%);
   --ps-border-strong:   hsl(220 13% 78%);
   --ps-text:            hsl(222 20% 10%);
-  --ps-text-muted:      hsl(220 10% 46%);
-  --ps-text-faint:      hsl(220 8% 64%);
+  --ps-text-muted:      hsl(220 10% 42%);
+  --ps-text-faint:      hsl(220 8% 44%);
   --ps-text-inverse:    hsl(0 0% 100%);
   --ps-accent:          hsl(221 83% 53%);
   --ps-accent-light:    hsl(221 83% 95%);

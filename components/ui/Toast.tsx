@@ -219,6 +219,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
       {/* Fixed toast container — bottom-right (full-width gutter on small screens) */}
       <div
+        role="region"
         aria-label="Notifications"
         className="ps-toast-stack"
         style={{

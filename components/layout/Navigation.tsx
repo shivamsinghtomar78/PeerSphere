@@ -93,7 +93,7 @@ export function Sidebar({ role, collapsed = false, onCollapse }: SidebarProps) {
                     'text-sm font-medium transition-base',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ps-focus)]',
                     isActive
-                      ? 'bg-accent-light text-accent glass-nav-highlight'
+                      ? 'bg-accent-light text-accent-dark glass-nav-highlight'
                       : 'text-text-muted hover:text-text hover:bg-surface-raised',
                     collapsed && 'justify-center px-2'
                   )}
@@ -227,7 +227,7 @@ export function BottomNav({ role }: { role: 'student' | 'placement' }) {
                   'flex flex-col items-center justify-center h-full gap-1',
                   'text-xs font-medium transition-base',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--ps-focus)]',
-                  isActive ? 'text-accent' : 'text-text-muted',
+                  isActive ? 'text-accent-dark' : 'text-text-muted',
                   // Minimum 44px touch target
                   'min-h-[44px]'
                 )}
@@ -285,7 +285,7 @@ export function MobileDrawer({ role, open, onClose }: MobileDrawerProps) {
                     aria-current={isActive ? 'page' : undefined}
                     className={cn(
                       'flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-base',
-                      isActive ? 'bg-accent-light text-accent' : 'text-text-muted hover:text-text hover:bg-surface-raised'
+                      isActive ? 'bg-accent-light text-accent-dark' : 'text-text-muted hover:text-text hover:bg-surface-raised'
                     )}
                   >
                     <NavIcon path={item.iconPath} />
