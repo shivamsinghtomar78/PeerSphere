@@ -67,7 +67,8 @@ export function GlassBadge({
 
 // ─── Eligibility Badge (paired icon + label) ───────────────────────
 interface EligibilityBadgeProps {
-  status: 'eligible' | 'ineligible' | 'conditional' | 'pending';
+  /** Accepts either casing — API enums are UPPERCASE, frontend types lowercase */
+  status: 'eligible' | 'ineligible' | 'conditional' | 'pending' | string;
 }
 
 const eligibilityConfig = {
@@ -78,7 +79,9 @@ const eligibilityConfig = {
 };
 
 export function EligibilityBadge({ status }: EligibilityBadgeProps) {
-  const cfg = eligibilityConfig[status];
+  // Normalize casing and never crash the page over an unknown value
+  const key = String(status ?? '').toLowerCase() as keyof typeof eligibilityConfig;
+  const cfg = eligibilityConfig[key] ?? eligibilityConfig.pending;
   return (
     <GlassBadge variant={cfg.variant}>
       <span aria-hidden="true">{cfg.symbol}</span>

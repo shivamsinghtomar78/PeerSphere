@@ -565,7 +565,7 @@ export const mapBackendApplicationToFrontend = (
     studentId: backendApp.studentId,
     overallScore: backendApp.latestEvaluation.overallScore || 0,
     confidenceScore: backendApp.latestEvaluation.confidenceScore || 0,
-    eligibilityStatus: backendApp.latestEvaluation.eligibility as EligibilityStatus,
+    eligibilityStatus: (backendApp.latestEvaluation.eligibility?.toLowerCase() as EligibilityStatus) || 'pending',
     coveragePercent: backendApp.latestEvaluation.coveragePercent || 0,
     strongSkills: [],
     partialSkills: [],

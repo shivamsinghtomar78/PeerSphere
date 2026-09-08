@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { GlassButton } from '@/components/ui/GlassButton';
+import { ClayButton } from '@/components/ui/ClayButton';
 import { GlassInput } from '@/components/ui/GlassInput';
 import { GlassBadge } from '@/components/ui/GlassBadge';
 import { SkillChip } from '@/components/product/SkillChip';
@@ -171,13 +172,12 @@ export default function StudentProfilePage() {
           </p>
         </div>
 
-        <GlassButton
-          variant="primary"
+        <ClayButton
           size="md"
           onClick={handleSave}
         >
           Save Changes
-        </GlassButton>
+        </ClayButton>
       </div>
 
       {/* Academic Credentials Bento Grid */}

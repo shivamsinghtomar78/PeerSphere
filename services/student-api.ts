@@ -8,6 +8,7 @@ import { apiClient, getErrorMessage } from '@/lib/api-client';
 import {
   BackendStudent,
   BackendJob,
+  BackendJobDetail,
   BackendJobList,
   BackendApplication,
   BackendApplicationList,
@@ -17,6 +18,7 @@ import {
   ApplicationQueryParams,
   mapBackendStudentToFrontend,
   mapBackendJobToFrontend,
+  mapBackendJobDetailToFrontend,
   mapBackendApplicationToFrontend,
 } from '@/types/api';
 import type { Student, Job, Application } from '@/types';
@@ -436,6 +438,15 @@ export function convertToFrontendStudent(backendStudent: BackendStudent): Studen
  */
 export function convertToFrontendJob(backendJob: BackendJob): Job {
   return mapBackendJobToFrontend(backendJob);
+}
+
+/**
+ * Converter for the GET /jobs/[jobId] DETAIL response, whose fields live
+ * under `version` (unlike the flat list-item shape). Using the flat
+ * converter on a detail payload crashes on undefined enums.
+ */
+export function convertToFrontendJobDetail(backendJob: BackendJobDetail): Job {
+  return mapBackendJobDetailToFrontend(backendJob);
 }
 
 /**

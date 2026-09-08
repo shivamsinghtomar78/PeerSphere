@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { GlassButton } from '@/components/ui/GlassButton';
+import { ClayButton } from '@/components/ui/ClayButton';
 import { GlassBadge, EligibilityBadge } from '@/components/ui/GlassBadge';
 import { MatchScore } from '@/components/product/MatchScore';
 import { SkillChip } from '@/components/product/SkillChip';
@@ -16,7 +17,7 @@ import {
   fetchMyProfile,
   fetchMyApplications,
   applyToJob,
-  convertToFrontendJob,
+  convertToFrontendJobDetail,
   convertToFrontendStudent,
   convertToFrontendApplication,
 } from '@/services/student-api';
@@ -49,7 +50,7 @@ export default function JobDetailPage() {
           fetchMyApplications({ pageSize: 50 }),
         ]);
 
-        const frontendJob = convertToFrontendJob(jobResult);
+        const frontendJob = convertToFrontendJobDetail(jobResult);
         const frontendStudent = convertToFrontendStudent(profileResult);
         const frontendApps = appsResult.items.map(convertToFrontendApplication);
 
@@ -216,14 +217,14 @@ export default function JobDetailPage() {
                 Detailed Match Breakdown
               </GlassButton>
             </Link>
-            <GlassButton
-              variant={applied ? 'secondary' : 'primary'}
+            <ClayButton
+              variant={applied ? 'neutral' : 'accent'}
               size="md"
               disabled={applied}
               onClick={handleApply}
             >
               {applied ? 'Application Submitted ✓' : 'Apply for Role'}
-            </GlassButton>
+            </ClayButton>
           </div>
         </div>
       </GlassCard>

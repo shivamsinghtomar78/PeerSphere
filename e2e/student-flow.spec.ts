@@ -22,31 +22,27 @@ test.describe('student portal flow', () => {
   test('browse jobs → open detail → apply → application listed', async ({ page }) => {
     await login(page, STUDENT);
 
-    // Jobs list renders seeded published jobs
+    // Jobs list renders seeded published jobs (content appears after data load)
     await page.goto('/student/jobs');
-    await expect(page.locator('h1')).toBeVisible();
-    const jobCards = page.getByRole('link', { name: /view|detail/i }).or(page.locator('a[href*="/student/jobs/"]'));
-    await expect(jobCards.first()).toBeVisible({ timeout: 15_000 });
+    const jobCards = page.locator('a[href*="/student/jobs/"]');
+    await expect(jobCards.first()).toBeVisible({ timeout: 60_000 });
 
     // Open the first job detail
     await jobCards.first().click();
     await page.waitForURL(/\/student\/jobs\/[^/]+$/, { timeout: 15_000 });
     await expect(page.locator('h1')).toBeVisible();
 
-    // Apply if possible; if already applied the button reflects it
-    const applyButton = page.getByRole('button', { name: /^apply\b|apply now/i }).first();
+    // Apply if possible; on re-runs the button shows the submitted state
+    const applyButton = page.getByRole('button', { name: /apply for role|^apply\b/i }).first();
+    const submittedButton = page.getByRole('button', { name: /application submitted/i }).first();
+    await expect(applyButton.or(submittedButton)).toBeVisible();
     if (await applyButton.isVisible().catch(() => false)) {
-      if (await applyButton.isEnabled()) {
-        await applyButton.click();
-        // confirmation dialog if one appears
-        const confirm = page.getByRole('button', { name: /confirm|yes|submit/i }).first();
-        if (await confirm.isVisible().catch(() => false)) await confirm.click();
-        await expect(
-          page.getByText(/applied|application submitted|success/i).first()
-        ).toBeVisible({ timeout: 15_000 });
-      }
+      await applyButton.click();
+      await expect(
+        page.getByText(/application submitted|success/i).first()
+      ).toBeVisible({ timeout: 15_000 });
     } else {
-      await expect(page.getByText(/already applied|applied/i).first()).toBeVisible();
+      await expect(submittedButton).toBeDisabled();
     }
 
     // Applications page lists at least one application
@@ -61,8 +57,12 @@ test.describe('student portal flow', () => {
     await login(page, STUDENT);
 
     await page.goto('/student/match');
-    await expect(page.locator('h1')).toBeVisible();
-    await expect(page.getByText(/\d+\s*\/\s*100|\d+%/).first()).toBeVisible({ timeout: 15_000 });
+    // h1 renders only after evaluations load; the default-selected job may
+    // have no evaluation yet — the empty state is a legitimate render
+    await expect(page.locator('h1')).toBeVisible({ timeout: 60_000 });
+    await expect(
+      page.getByText(/\d+\s*\/\s*100|\d+%/).first().or(page.getByText(/no match analysis/i).first())
+    ).toBeVisible();
 
     await page.goto('/student/skill-gaps');
     await expect(page.locator('h1')).toBeVisible();
@@ -72,6 +72,7 @@ test.describe('student portal flow', () => {
 
     await page.goto('/student/profile');
     await expect(page.locator('h1')).toBeVisible();
-    await expect(page.getByText(/arjun/i).first()).toBeVisible({ timeout: 15_000 });
+    // The name is form data, not text — assert the input carries the seeded value
+    await expect(page.locator('input[value*="Arjun" i]').first()).toBeAttached({ timeout: 15_000 });
   });
 });

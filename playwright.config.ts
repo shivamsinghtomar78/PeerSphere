@@ -8,6 +8,9 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: './e2e',
   timeout: 120_000,
+  // Pages gate content behind data loads; Neon cold-start + dev first-compile
+  // can take >15s, so assertions get a generous default.
+  expect: { timeout: 30_000 },
   fullyParallel: false,
   workers: 1,
   retries: 0,
