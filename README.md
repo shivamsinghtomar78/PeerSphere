@@ -70,6 +70,10 @@ npx tsc --noEmit                # 0 errors expected
 ## Documentation
 
 - `docs/` — full project documentation (research, architecture, DB, engines, frontend spec)
+- `docs/14-devops-and-deployment/runbook.md` — **deployment runbook** (env table, deploy steps, smoke checklist, rollback)
+- `docs/frontend/design-system.md` — glass × clay design system rules + QA record
+- `docs/03-database/er-model.md` — authoritative ER model, indexes, snapshot contract
+- `PROJECT_PLAN.md` — the executed master development plan (all phases)
 - `docs/frontend/development-status.md` — verified phase-by-phase frontend status
 - `MIGRATION_STATUS.md` — unified-app migration & endpoint inventory (verified)
 - `FRONTEND_INTEGRATION_GUIDE.md` — frontend↔API integration guide
