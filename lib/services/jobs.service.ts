@@ -48,13 +48,16 @@ async function latestVersion(jobId: string) {
 
 // ─── listJobs ─────────────────────────────────────────────────────
 
-export async function listJobs(query: {
-  page?: number;
-  pageSize?: number;
-  search?: string;
-  status?: string;
-  department?: string;
-}) {
+export async function listJobs(
+  query: {
+    page?: number;
+    pageSize?: number;
+    search?: string;
+    status?: string;
+    department?: string;
+  },
+  options: { allStatusesByDefault?: boolean } = {}
+) {
   const page = Math.max(1, query.page ?? 1);
   const pageSize = Math.min(100, Math.max(1, query.pageSize ?? 20));
   const skip = (page - 1) * pageSize;
@@ -63,7 +66,8 @@ export async function listJobs(query: {
 
   if (query.status) {
     jobWhere.status = query.status as Prisma.EnumJobStatusFilter;
-  } else {
+  } else if (!options.allStatusesByDefault) {
+    // Public/student callers only ever see published jobs
     jobWhere.status = 'PUBLISHED';
   }
 

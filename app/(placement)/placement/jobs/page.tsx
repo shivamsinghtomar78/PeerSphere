@@ -7,6 +7,7 @@ import { GlassButton } from '@/components/ui/GlassButton';
 import { GlassBadge } from '@/components/ui/GlassBadge';
 import { GlassInput } from '@/components/ui/GlassInput';
 import { GlassDialog } from '@/components/ui/GlassDialog';
+import { ClayButton } from '@/components/ui/ClayButton';
 import { SkillChip } from '@/components/product/SkillChip';
 import { LoadingState, EmptyState, ErrorState } from '@/components/states';
 import {
@@ -167,9 +168,9 @@ export default function PlacementJobsPage() {
           </p>
         </div>
 
-        <GlassButton variant="primary" size="md" onClick={() => setIsWizardOpen(true)}>
+        <ClayButton size="md" onClick={() => setIsWizardOpen(true)}>
           + Create New Job Post
-        </GlassButton>
+        </ClayButton>
       </div>
 
       {/* Jobs Listing */}
@@ -264,9 +265,9 @@ export default function PlacementJobsPage() {
                 Continue →
               </GlassButton>
             ) : (
-              <GlassButton variant="primary" size="sm" onClick={handleCreate}>
+              <ClayButton size="sm" onClick={handleCreate}>
                 Publish Drive to Campus ✓
-              </GlassButton>
+              </ClayButton>
             )}
           </div>
         }

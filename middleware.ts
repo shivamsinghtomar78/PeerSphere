@@ -45,8 +45,14 @@ export async function middleware(request: NextRequest) {
   requestHeaders.delete('x-user-id');
   requestHeaders.delete('x-user-role');
 
-  // Public (path, method) pairs pass through with sanitized headers, no auth
+  // Public (path, method) pairs never 401 — but a valid token still gets its
+  // verified identity forwarded (e.g. admins see drafts in the jobs list).
   if (isPublicRoute(pathname, request.method)) {
+    const optionalUser = await authenticate(request);
+    if (optionalUser) {
+      requestHeaders.set('x-user-id', optionalUser.userId);
+      requestHeaders.set('x-user-role', optionalUser.role);
+    }
     return NextResponse.next({
       request: {
         headers: requestHeaders,

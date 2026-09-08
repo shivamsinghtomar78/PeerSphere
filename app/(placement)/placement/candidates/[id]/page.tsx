@@ -12,13 +12,18 @@ import { SkillChip } from '@/components/product/SkillChip';
 import { HumanReviewBanner } from '@/components/product/HumanReviewBanner';
 import { LoadingState, EmptyState, ErrorState } from '@/components/states';
 import { useToast } from '@/components/ui/Toast';
+import { GlassDialog } from '@/components/ui/GlassDialog';
+import { ClayButton } from '@/components/ui/ClayButton';
 import {
   fetchStudentById,
   fetchJobById,
   fetchAllApplications,
   updateApplicationStatus,
   convertToFrontendStudent,
-  convertToFrontendJob,
+  convertToFrontendJobDetail,
+  createOverride,
+  fetchEvaluationOverrides,
+  type EvaluationOverride,
 } from '@/services/placement-api';
 import { mapBackendEvaluationToMatchResult } from '@/types/api';
 import type { BackendStudent, BackendJob, BackendEvaluation, BackendApplication } from '@/types/api';
@@ -39,6 +44,14 @@ export default function CandidateDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Override state (admin decision trail for the latest evaluation)
+  const [evaluationId, setEvaluationId] = useState<string | null>(null);
+  const [overrides, setOverrides] = useState<EvaluationOverride[]>([]);
+  const [overrideOpen, setOverrideOpen] = useState(false);
+  const [overrideDecision, setOverrideDecision] = useState<EvaluationOverride['decision']>('shortlist');
+  const [overrideReason, setOverrideReason] = useState('');
+  const [overrideSubmitting, setOverrideSubmitting] = useState(false);
+
   // Fetch data on mount
   useEffect(() => {
     if (!studentId) return;
@@ -48,7 +61,7 @@ export default function CandidateDetailPage() {
         const backendStudent = await fetchStudentById(studentId);
         setStudent(convertToFrontendStudent(backendStudent));
 
-        const appsData = await fetchAllApplications({ pageSize: 200 });
+        const appsData = await fetchAllApplications({ pageSize: 100 }); // API caps pageSize at 100
         const studentApps = appsData?.items
           .filter((a) => a.studentId === studentId)
           .sort(
@@ -56,19 +69,27 @@ export default function CandidateDetailPage() {
               new Date(b.appliedAt).getTime() - new Date(a.appliedAt).getTime()
           );
 
-        const app = studentApps?.[0];
+        // Prefer the newest application that HAS an evaluation — the page's
+        // purpose is reviewing the evaluation; fall back to the newest overall.
+        const app =
+          studentApps?.find((a) => a.latestEvaluation) ?? studentApps?.[0];
         if (app) {
           setApplicationId(app.id);
           setShortlisted(app.status === 'SHORTLISTED');
 
           const jobId = app.jobId;
           const backendJob = await fetchJobById(jobId);
-          if (backendJob) setJob(convertToFrontendJob(backendJob));
+          if (backendJob) setJob(convertToFrontendJobDetail(backendJob));
 
           const evalData =
             (app.latestEvaluation as BackendEvaluation | null | undefined) ?? null;
           if (evalData) {
             setMatchResult(mapBackendEvaluationToMatchResult(evalData, jobId));
+            setEvaluationId(evalData.id);
+            // Override history is decision-support context — load alongside
+            fetchEvaluationOverrides(evalData.id)
+              .then(setOverrides)
+              .catch(() => setOverrides([]));
           }
         }
 
@@ -81,6 +102,23 @@ export default function CandidateDetailPage() {
 
     fetchData();
   }, [studentId]);
+
+  const handleOverrideSubmit = async () => {
+    if (!evaluationId || !overrideReason.trim()) return;
+    try {
+      setOverrideSubmitting(true);
+      await createOverride(evaluationId, overrideDecision, overrideReason.trim());
+      const history = await fetchEvaluationOverrides(evaluationId);
+      setOverrides(history);
+      setOverrideOpen(false);
+      setOverrideReason('');
+      toast('Override recorded', 'success');
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Failed to record override', 'error');
+    } finally {
+      setOverrideSubmitting(false);
+    }
+  };
 
   const handleShortlistToggle = async () => {
     if (!applicationId) return;
@@ -217,17 +255,99 @@ export default function CandidateDetailPage() {
             <GlassButton variant="secondary" size="md" onClick={() => window.print()}>
               Download Candidate PDF
             </GlassButton>
-            <GlassButton
-              variant={shortlisted ? 'secondary' : 'primary'}
+            {evaluationId && (
+              <GlassButton variant="secondary" size="md" onClick={() => setOverrideOpen(true)}>
+                Override Decision
+              </GlassButton>
+            )}
+            <ClayButton
+              variant={shortlisted ? 'neutral' : 'accent'}
               size="md"
               onClick={handleShortlistToggle}
               disabled={isUpdating || !applicationId}
             >
               {shortlisted ? 'Shortlisted ✓' : 'Add to Official Shortlist'}
-            </GlassButton>
+            </ClayButton>
           </div>
         </div>
       </GlassCard>
+
+      {/* Override history (append-only decision trail) */}
+      {overrides.length > 0 && (
+        <GlassCard variant="surface" padding="md" className="space-y-3">
+          <h2 className="text-title font-bold text-text">Override History</h2>
+          <ul className="space-y-2">
+            {overrides.map((o) => (
+              <li
+                key={o.id}
+                className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-sm border-b border-border-subtle pb-2 last:border-0"
+              >
+                <GlassBadge variant={o.decision === 'reject' ? 'danger' : o.decision === 'shortlist' ? 'success' : 'default'} size="sm">
+                  {o.decision}
+                </GlassBadge>
+                <span className="text-text flex-1">{o.reason}</span>
+                <span className="text-caption text-text-faint whitespace-nowrap">
+                  {new Date(o.createdAt).toLocaleString()}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </GlassCard>
+      )}
+
+      {/* Override dialog */}
+      <GlassDialog
+        open={overrideOpen}
+        onClose={() => setOverrideOpen(false)}
+        title="Override Evaluation Decision"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-text-muted">
+            Overrides are append-only and audited. A reason is required.
+          </p>
+          <div className="space-y-1">
+            <label htmlFor="override-decision" className="text-sm font-medium text-text-muted block">
+              Decision
+            </label>
+            <select
+              id="override-decision"
+              value={overrideDecision}
+              onChange={(e) => setOverrideDecision(e.target.value as EvaluationOverride['decision'])}
+              className="w-full h-10 px-3 text-sm rounded-sm border border-border bg-surface text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ps-focus)]"
+            >
+              <option value="shortlist">Shortlist</option>
+              <option value="reject">Reject</option>
+              <option value="review">Needs further review</option>
+              <option value="promote">Promote</option>
+            </select>
+          </div>
+          <div className="space-y-1">
+            <label htmlFor="override-reason" className="text-sm font-medium text-text-muted block">
+              Reason (required)
+            </label>
+            <textarea
+              id="override-reason"
+              value={overrideReason}
+              onChange={(e) => setOverrideReason(e.target.value)}
+              rows={3}
+              placeholder="e.g. Strong practical portfolio despite low keyword coverage"
+              className="w-full px-3 py-2 text-sm rounded-sm border border-border bg-surface text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ps-focus)]"
+            />
+          </div>
+          <div className="flex justify-end gap-3">
+            <GlassButton variant="ghost" onClick={() => setOverrideOpen(false)}>
+              Cancel
+            </GlassButton>
+            <ClayButton
+              onClick={handleOverrideSubmit}
+              disabled={overrideSubmitting || !overrideReason.trim()}
+              loading={overrideSubmitting}
+            >
+              Record Override
+            </ClayButton>
+          </div>
+        </div>
+      </GlassDialog>
 
       {/* Breakdown Matrix */}
       <div className="space-y-6">

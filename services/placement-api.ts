@@ -7,6 +7,7 @@
 import { apiClient, getErrorMessage } from '@/lib/api-client';
 import {
   BackendJob,
+  BackendJobDetail,
   BackendJobList,
   BackendStudent,
   BackendStudentList,
@@ -17,6 +18,7 @@ import {
   BackendPlacementStats,
   BackendSkillGaps,
   mapBackendJobToFrontend,
+  mapBackendJobDetailToFrontend,
   mapBackendStudentToFrontend,
   mapBackendApplicationToFrontend,
   mapBackendEvaluationToMatchResult,
@@ -54,10 +56,61 @@ export async function fetchAllJobs(params?: JobQueryParams): Promise<BackendJobL
  * Fetch a single job by ID
  * GET /api/v1/jobs/:id
  */
-export async function fetchJobById(id: string): Promise<BackendJob> {
+export async function fetchJobById(id: string): Promise<BackendJobDetail> {
   try {
-    const response = await apiClient.get<{ success: boolean; data: BackendJob }>(`/jobs/${id}`);
+    const response = await apiClient.get<{ success: boolean; data: BackendJobDetail }>(`/jobs/${id}`);
     return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+}
+
+/** Converter for the nested GET /jobs/[id] detail shape (fields under `version`). */
+export function convertToFrontendJobDetail(backendJob: BackendJobDetail): Job {
+  return mapBackendJobDetailToFrontend(backendJob);
+}
+
+// ─── Overrides ───────────────────────────────────────────────────────
+
+export interface EvaluationOverride {
+  id: string;
+  decision: 'shortlist' | 'reject' | 'review' | 'promote';
+  reason: string;
+  createdAt: string;
+  actor?: { id: string; email: string; role: string };
+}
+
+/**
+ * Record an admin override on an evaluation (append-only, reason required)
+ * POST /api/v1/evaluations/[evaluationId]/override
+ */
+export async function createOverride(
+  evaluationId: string,
+  decision: EvaluationOverride['decision'],
+  reason: string
+): Promise<EvaluationOverride> {
+  try {
+    const response = await apiClient.post<{ success: boolean; data: EvaluationOverride }>(
+      `/evaluations/${evaluationId}/override`,
+      { decision, reason }
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+}
+
+/**
+ * List the override history for an evaluation
+ * GET /api/v1/evaluations/[evaluationId]/overrides
+ */
+export async function fetchEvaluationOverrides(evaluationId: string): Promise<EvaluationOverride[]> {
+  try {
+    const response = await apiClient.get<{
+      success: boolean;
+      data: { overrides: EvaluationOverride[] };
+    }>(`/evaluations/${evaluationId}/overrides`);
+    return response.data.data.overrides ?? [];
   } catch (error) {
     throw new Error(getErrorMessage(error));
   }

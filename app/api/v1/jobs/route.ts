@@ -44,14 +44,16 @@ export async function GET(request: NextRequest) {
   try {
     const query = listJobsSchema.parse(Object.fromEntries(request.nextUrl.searchParams));
 
-    if (query.status && query.status !== 'PUBLISHED') {
-      const user = getAuthUser(request);
-      if (!user || user.role !== 'PLACEMENT_ADMIN') {
-        return forbiddenError('Only placement admins can list unpublished jobs');
-      }
+    const user = getAuthUser(request);
+    const isAdmin = user?.role === 'PLACEMENT_ADMIN';
+
+    if (query.status && query.status !== 'PUBLISHED' && !isAdmin) {
+      return forbiddenError('Only placement admins can list unpublished jobs');
     }
 
-    const data = await jobsService.listJobs(query);
+    // Admins see every status by default (they manage drafts); everyone else
+    // is pinned to PUBLISHED inside the service.
+    const data = await jobsService.listJobs(query, { allStatusesByDefault: isAdmin });
     return successResponse(data);
   } catch (error: any) {
     if (error instanceof z.ZodError) {

@@ -43,12 +43,15 @@ export default function CandidateComparisonPage() {
         setJobs(backendJobs);
         setStudents(frontendStudents);
 
-        // Select first job and fetch top candidates
-        if (backendJobs.length > 0) {
-          setSelectedJobId(backendJobs[0].jobId);
-          const candidatesData = await fetchCandidatesForJob(backendJobs[0].jobId);
-          const topCandidates = getTopCandidates(candidatesData, 3);
-          setCandidates(topCandidates);
+        // Auto-select the first drive that actually has candidates (a freshly
+        // published drive has none and would dead-end the comparison view)
+        for (const backendJob of backendJobs.slice(0, 5)) {
+          const candidatesData = await fetchCandidatesForJob(backendJob.jobId);
+          if (candidatesData.length > 0) {
+            setSelectedJobId(backendJob.jobId);
+            setCandidates(getTopCandidates(candidatesData, 3));
+            break;
+          }
         }
 
         setIsLoading(false);

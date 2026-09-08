@@ -50,7 +50,7 @@ export default function PlacementAnalyticsPage() {
         const [statsData, skillGapsData, studentsData] = await Promise.all([
           fetchPlacementStats(),
           fetchSkillGapsAnalysis(),
-          fetchAllStudents({ pageSize: 200 }),
+          fetchAllStudents({ pageSize: 100 }), // API caps pageSize at 100
         ]);
 
         const frontendStats = statsData ? mapBackendPlacementStatsToFrontend(statsData) : [];

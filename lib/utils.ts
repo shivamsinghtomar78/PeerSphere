@@ -20,8 +20,10 @@ export function formatScore(score: number | null | undefined): string {
 /**
  * Format a CGPA value.
  */
-export function formatCgpa(cgpa: number): string {
-  return cgpa.toFixed(2);
+export function formatCgpa(cgpa: number | string | null | undefined): string {
+  // Prisma Decimal fields serialize to strings over JSON
+  const n = Number(cgpa);
+  return Number.isFinite(n) ? n.toFixed(2) : '—';
 }
 
 /**

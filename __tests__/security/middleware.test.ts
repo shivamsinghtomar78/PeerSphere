@@ -73,6 +73,31 @@ describe('middleware — header-spoofing privilege escalation (regression)', () 
     expect(forwardedHeader(res, 'x-user-role')).toBeNull();
   });
 
+  it('forwards VERIFIED identity on public routes (forged headers still stripped)', async () => {
+    const token = await signToken(
+      { userId: 'admin-1', role: 'PLACEMENT_ADMIN', exp: futureExp() },
+      SECRET
+    );
+    const res = await middleware(
+      makeRequest('/api/v1/jobs', 'GET', {
+        authorization: `Bearer ${token}`,
+        'x-user-id': 'attacker',
+        'x-user-role': 'STUDENT',
+      })
+    );
+    expect(res.status).toBe(200);
+    expect(forwardedHeader(res, 'x-user-id')).toBe('admin-1');
+    expect(forwardedHeader(res, 'x-user-role')).toBe('PLACEMENT_ADMIN');
+  });
+
+  it('invalid token on a public route → still public (200), no identity', async () => {
+    const res = await middleware(
+      makeRequest('/api/v1/jobs', 'GET', { authorization: 'Bearer garbage' })
+    );
+    expect(res.status).toBe(200);
+    expect(forwardedHeader(res, 'x-user-id')).toBeNull();
+  });
+
   it('strips forged headers even when a valid token is presented (verified identity wins)', async () => {
     const token = await signToken(
       { userId: 'real-student', role: 'STUDENT', exp: futureExp() },
