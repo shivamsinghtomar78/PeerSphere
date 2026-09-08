@@ -11,9 +11,10 @@ const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR ?? path.join(process.cwd(), 'uploads');
 
-// Ensure upload directory exists
-if (!fs.existsSync(UPLOAD_DIR)) {
-  fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+// Ensure upload directory exists (runtime storage dir — opt out of Turbopack's
+// build-output tracing, which would otherwise pull the whole project in)
+if (!fs.existsSync(/* turbopackIgnore: true */ UPLOAD_DIR)) {
+  fs.mkdirSync(/* turbopackIgnore: true */ UPLOAD_DIR, { recursive: true });
 }
 
 // ─── Service functions ────────────────────────────────────────────────────────
@@ -39,7 +40,7 @@ export async function uploadResume(
   const ext = path.extname(file.originalname) || '.pdf';
   const basename = crypto.randomBytes(16).toString('hex');
   const storageKey = `${basename}${ext}`;
-  const filePath = path.join(UPLOAD_DIR, storageKey);
+  const filePath = path.join(/* turbopackIgnore: true */ UPLOAD_DIR, storageKey);
 
   // Write file to disk
   fs.writeFileSync(filePath, file.buffer);
@@ -185,7 +186,7 @@ async function recalculateStudentCompleteness(studentId: string): Promise<void> 
 // ─── File system helpers ────────────────────────────────────────────────────
 
 export function getFilePath(storageKey: string): string {
-  return path.join(UPLOAD_DIR, storageKey);
+  return path.join(/* turbopackIgnore: true */ UPLOAD_DIR, storageKey);
 }
 
 export function fileExists(filePath: string): boolean {

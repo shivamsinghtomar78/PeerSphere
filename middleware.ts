@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { verifyToken, TokenPayload } from '@/lib/auth/jwt';
-import { JWT_SECRET } from '@/lib/auth/env';
+import { getJwtSecret } from '@/lib/auth/env';
 
 export type AuthPayload = TokenPayload;
 
@@ -31,7 +31,7 @@ export const authenticate = (request: NextRequest): Promise<AuthPayload | null> 
   if (!token) {
     return Promise.resolve(null);
   }
-  return verifyToken(token, JWT_SECRET);
+  return verifyToken(token, getJwtSecret());
 };
 
 // Main middleware function

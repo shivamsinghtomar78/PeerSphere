@@ -64,31 +64,42 @@ describe('lib/auth/jwt — the single JWT implementation', () => {
   });
 });
 
-describe('lib/auth/env — fail-fast secrets', () => {
+describe('lib/auth/env — fail-fast secrets (lazy: first USE throws, import never does)', () => {
   const ORIGINAL = process.env;
 
-  beforeEach(() => {
-    jest.resetModules();
+  beforeEach(async () => {
     process.env = { ...ORIGINAL };
+    const { resetSecretCache } = await import('@/lib/auth/env');
+    resetSecretCache();
   });
 
-  afterAll(() => {
+  afterAll(async () => {
     process.env = ORIGINAL;
+    const { resetSecretCache } = await import('@/lib/auth/env');
+    resetSecretCache();
   });
 
-  it('throws at import when JWT_SECRET is unset', async () => {
+  it('import never throws (Next build-time page collection must survive missing env)', async () => {
     delete process.env.JWT_SECRET;
-    await expect(import('@/lib/auth/env')).rejects.toThrow('JWT_SECRET is not set');
+    await expect(import('@/lib/auth/env')).resolves.toBeDefined();
   });
 
-  it('throws at import when JWT_SECRET is too short', async () => {
+  it('getJwtSecret throws when JWT_SECRET is unset', async () => {
+    delete process.env.JWT_SECRET;
+    const { getJwtSecret } = await import('@/lib/auth/env');
+    expect(() => getJwtSecret()).toThrow('JWT_SECRET is not set');
+  });
+
+  it('getJwtSecret throws when JWT_SECRET is too short', async () => {
     process.env.JWT_SECRET = 'short';
-    await expect(import('@/lib/auth/env')).rejects.toThrow('at least 32 characters');
+    const { getJwtSecret } = await import('@/lib/auth/env');
+    expect(() => getJwtSecret()).toThrow('at least 32 characters');
   });
 
-  it('exports the secrets when set', async () => {
+  it('returns the secrets when set', async () => {
     const env = await import('@/lib/auth/env');
-    expect(env.JWT_SECRET).toBe(process.env.JWT_SECRET);
+    expect(env.getJwtSecret()).toBe(process.env.JWT_SECRET);
+    expect(env.getJwtRefreshSecret()).toBe(process.env.JWT_REFRESH_SECRET);
     expect(env.ACCESS_TOKEN_TTL_SECONDS).toBeGreaterThan(0);
   });
 

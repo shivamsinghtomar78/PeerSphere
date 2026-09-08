@@ -6,7 +6,9 @@ import { NextRequest } from 'next/server';
 import { POST as login } from '@/app/api/v1/auth/route';
 import { POST as refresh } from '@/app/api/v1/auth/refresh/route';
 import { verifyToken } from '@/lib/auth/jwt';
-import { JWT_SECRET, JWT_REFRESH_SECRET } from '@/lib/auth/env';
+import { getJwtSecret, getJwtRefreshSecret } from '@/lib/auth/env';
+const JWT_SECRET = getJwtSecret();
+const JWT_REFRESH_SECRET = getJwtRefreshSecret();
 import { prisma } from '@/lib/db/prisma';
 import { resetRateLimits } from '@/lib/auth/rate-limit';
 

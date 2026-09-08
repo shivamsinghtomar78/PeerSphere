@@ -11,8 +11,8 @@ import {
 import { checkRateLimit, clientKeyFromHeaders } from '@/lib/auth/rate-limit';
 import { signToken, verifyToken, TokenPayload } from '@/lib/auth/jwt';
 import {
-  JWT_SECRET,
-  JWT_REFRESH_SECRET,
+  getJwtSecret,
+  getJwtRefreshSecret,
   ACCESS_TOKEN_TTL_SECONDS,
   REFRESH_TOKEN_TTL_SECONDS,
 } from '@/lib/auth/env';
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     const { refreshToken } = refreshSchema.parse(body);
 
     // Verify refresh token (refresh secret — an access token must not pass here)
-    const payload = await verifyToken(refreshToken, JWT_REFRESH_SECRET);
+    const payload = await verifyToken(refreshToken, getJwtRefreshSecret());
     if (!payload) {
       return unauthorizedError('Refresh token invalid or expired');
     }
@@ -50,10 +50,10 @@ export async function POST(request: NextRequest) {
 
     // Generate new tokens
     const newPayload: TokenPayload = { userId: user.id, role: user.role };
-    const accessToken = await signToken(newPayload, JWT_SECRET, ACCESS_TOKEN_TTL_SECONDS);
+    const accessToken = await signToken(newPayload, getJwtSecret(), ACCESS_TOKEN_TTL_SECONDS);
     const newRefreshToken = await signToken(
       newPayload,
-      JWT_REFRESH_SECRET,
+      getJwtRefreshSecret(),
       REFRESH_TOKEN_TTL_SECONDS
     );
 

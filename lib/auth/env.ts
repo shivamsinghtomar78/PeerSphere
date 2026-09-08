@@ -1,11 +1,19 @@
 /**
  * Fail-fast auth environment configuration.
- * The app must refuse to boot without real secrets — no silent fallbacks.
+ * Secrets are validated on FIRST USE (lazily), not at module load: Next.js
+ * build-time page-data collection evaluates route modules without runtime
+ * env, so an import-time throw breaks `next build`. At runtime the first
+ * request that needs a secret still fails loudly with the same error.
  */
 
 const MIN_SECRET_LENGTH = 32;
 
+const cache = new Map<string, string>();
+
 function requireSecret(name: 'JWT_SECRET' | 'JWT_REFRESH_SECRET'): string {
+  const cached = cache.get(name);
+  if (cached) return cached;
+
   const value = process.env[name];
   if (!value) {
     throw new Error(
@@ -15,11 +23,22 @@ function requireSecret(name: 'JWT_SECRET' | 'JWT_REFRESH_SECRET'): string {
   if (value.length < MIN_SECRET_LENGTH) {
     throw new Error(`${name} must be at least ${MIN_SECRET_LENGTH} characters`);
   }
+  cache.set(name, value);
   return value;
 }
 
-export const JWT_SECRET = requireSecret('JWT_SECRET');
-export const JWT_REFRESH_SECRET = requireSecret('JWT_REFRESH_SECRET');
+export function getJwtSecret(): string {
+  return requireSecret('JWT_SECRET');
+}
+
+export function getJwtRefreshSecret(): string {
+  return requireSecret('JWT_REFRESH_SECRET');
+}
+
+/** Test hook — clears memoized secrets so env changes are re-read. */
+export function resetSecretCache(): void {
+  cache.clear();
+}
 
 /** Parses "15m" / "7d" / "3600" style durations to seconds. */
 export function parseDurationSeconds(raw: string | undefined, fallbackSeconds: number): number {

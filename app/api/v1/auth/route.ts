@@ -12,8 +12,8 @@ import {
 import { checkRateLimit, clientKeyFromHeaders } from '@/lib/auth/rate-limit';
 import { signToken, TokenPayload } from '@/lib/auth/jwt';
 import {
-  JWT_SECRET,
-  JWT_REFRESH_SECRET,
+  getJwtSecret,
+  getJwtRefreshSecret,
   ACCESS_TOKEN_TTL_SECONDS,
   REFRESH_TOKEN_TTL_SECONDS,
 } from '@/lib/auth/env';
@@ -42,11 +42,11 @@ async function logFailedLogin(userId: string | null, email: string): Promise<voi
 }
 
 function signAccess(payload: TokenPayload): Promise<string> {
-  return signToken(payload, JWT_SECRET, ACCESS_TOKEN_TTL_SECONDS);
+  return signToken(payload, getJwtSecret(), ACCESS_TOKEN_TTL_SECONDS);
 }
 
 function signRefresh(payload: TokenPayload): Promise<string> {
-  return signToken(payload, JWT_REFRESH_SECRET, REFRESH_TOKEN_TTL_SECONDS);
+  return signToken(payload, getJwtRefreshSecret(), REFRESH_TOKEN_TTL_SECONDS);
 }
 
 // GET handler
