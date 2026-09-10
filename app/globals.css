@@ -78,12 +78,17 @@
 }
 
 /* ─── Base Reset & Global Styles ─────────────────────────────────── */
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+/* Must live in @layer base: unlayered rules outrank @layer utilities,
+   so an unlayered universal reset would nullify every Tailwind
+   padding/margin utility. */
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
 }
 
 html {

@@ -17,7 +17,13 @@ const themes: { value: Theme; label: string; iconPath: string }[] = [
 ];
 
 export function ThemeSwitcher({ compact = false }: ThemeSwitcherProps) {
-  const { theme, setTheme } = useTheme();
+  const { theme: storedTheme, setTheme } = useTheme();
+
+  // The stored theme comes from localStorage, which the server can't see —
+  // render the server default until mounted to avoid a hydration mismatch.
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => setMounted(true), []);
+  const theme: Theme = mounted ? storedTheme : 'system';
 
   if (compact) {
     // Cycle through themes on click
