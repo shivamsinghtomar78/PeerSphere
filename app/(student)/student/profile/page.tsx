@@ -16,14 +16,40 @@ import {
   removeMySkill,
   updateMyProfile,
   uploadResume,
+  fetchMyResumes,
+  downloadMyResume,
   convertToFrontendStudent,
 } from '@/services/student-api';
 import type { BackendStudent, BackendSkillEvidence } from '@/types/api';
 import type { Student, Skill } from '@/types';
 import { formatDate } from '@/lib/utils';
 
+interface ResumeVersionRow {
+  id: string;
+  originalName: string;
+  sizeBytes: number;
+  state: string;
+  createdAt: string;
+}
+
+function formatFileSize(bytes: number): string {
+  if (!bytes) return '—';
+  return bytes >= 1024 * 1024
+    ? `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+    : `${Math.max(1, Math.round(bytes / 1024))} KB`;
+}
+
+function resumeStateBadge(state: string): { label: string; variant: 'success' | 'warning' | 'danger' | 'muted' } {
+  const s = String(state || '').toUpperCase();
+  if (s === 'PARSED') return { label: 'Parsed', variant: 'success' };
+  if (s === 'UPLOADED' || s === 'PARSING') return { label: 'Processing', variant: 'warning' };
+  if (s === 'FAILED') return { label: 'Parse failed', variant: 'danger' };
+  return { label: state || 'On file', variant: 'muted' };
+}
+
 export default function StudentProfilePage() {
   const [student, setStudent] = useState<Student | null>(null);
+  const [resumes, setResumes] = useState<ResumeVersionRow[]>([]);
   const [newSkill, setNewSkill] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
@@ -34,6 +60,12 @@ export default function StudentProfilePage() {
   const reloadProfile = async () => {
     const backendStudent = await fetchMyProfile();
     setStudent(convertToFrontendStudent(backendStudent));
+    // Version history is non-critical: the profile still renders if it fails
+    try {
+      setResumes(await fetchMyResumes());
+    } catch {
+      setResumes([]);
+    }
   };
 
   // Fetch profile data on mount
@@ -50,6 +82,14 @@ export default function StudentProfilePage() {
 
     fetchProfile();
   }, []);
+
+  const handleDownloadResume = async (resumeId: string, filename: string) => {
+    try {
+      await downloadMyResume(resumeId, filename);
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Failed to download resume', 'error');
+    }
+  };
 
   const handleUploadResume = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -243,14 +283,14 @@ export default function StudentProfilePage() {
               <p className="text-xs text-text-faint">
                 Updated: {student.resumeUpdatedAt ? formatDate(student.resumeUpdatedAt) : 'Never'}
               </p>
-              {student.resumeUrl && (
-                <a
-                  href={student.resumeUrl}
-                  className="inline-block text-xs text-accent hover:underline"
-                  download
+              {resumes.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => handleDownloadResume(resumes[0].id, resumes[0].originalName)}
+                  className="inline-block text-xs text-accent hover:underline cursor-pointer"
                 >
                   Download resume
-                </a>
+                </button>
               )}
             </div>
           </div>
@@ -279,6 +319,58 @@ export default function StudentProfilePage() {
           </div>
         </GlassCard>
       </div>
+
+      {/* Resume Version History */}
+      <GlassCard variant="surface" padding="md" className="space-y-1">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <h2 className="text-title font-bold text-text">Resume version history</h2>
+            <p className="text-xs text-text-muted mt-1">
+              Each upload becomes a new version and is re-parsed; older versions stay on file.
+            </p>
+          </div>
+          {resumes.length > 0 && (
+            <span className="text-caption text-text-muted">
+              {resumes.length} version{resumes.length === 1 ? '' : 's'} on file
+            </span>
+          )}
+        </div>
+
+        {resumes.length === 0 ? (
+          <p className="text-sm text-text-muted pt-3 pb-1">
+            No versions yet — your first upload starts the history.
+          </p>
+        ) : (
+          <ul className="divide-y divide-border-subtle">
+            {resumes.map((version, i) => {
+              const badge = resumeStateBadge(version.state);
+              return (
+                <li key={version.id} className="flex items-center gap-3 py-3 flex-wrap">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-medium text-text break-all">
+                        {version.originalName}
+                      </span>
+                      {i === 0 && <GlassBadge variant="accent">Active</GlassBadge>}
+                    </div>
+                    <span className="text-caption text-text-muted">
+                      Uploaded {formatDate(version.createdAt)} · {formatFileSize(version.sizeBytes)}
+                    </span>
+                  </div>
+                  <GlassBadge variant={badge.variant}>{badge.label}</GlassBadge>
+                  <button
+                    type="button"
+                    onClick={() => handleDownloadResume(version.id, version.originalName)}
+                    className="text-xs font-medium text-accent-dark hover:text-accent transition-base cursor-pointer"
+                  >
+                    Download
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </GlassCard>
 
       {/* Verified Skills Management */}
       <GlassCard variant="surface" padding="md" className="space-y-4">

@@ -4,14 +4,26 @@ import React, { useState, useEffect } from 'react';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { GlassBadge } from '@/components/ui/GlassBadge';
+import { GlassDialog } from '@/components/ui/GlassDialog';
+import { useToast } from '@/components/ui/Toast';
 import { LoadingState, EmptyState, ErrorState } from '@/components/states';
-import { fetchReports } from '@/services/placement-api';
+import {
+  fetchReports,
+  generateReport,
+  downloadReportCsv,
+  type GeneratedReport,
+} from '@/services/placement-api';
 import { formatDate } from '@/lib/utils';
 
 export default function PlacementReportsPage() {
   const [reports, setReports] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  // Which report id is currently being generated, and for which action
+  const [busy, setBusy] = useState<{ id: string; action: 'view' | 'download' } | null>(null);
+  const [summary, setSummary] = useState<GeneratedReport | null>(null);
 
   // Fetch reports on mount
   useEffect(() => {
@@ -28,6 +40,30 @@ export default function PlacementReportsPage() {
 
     fetchData();
   }, []);
+
+  const handleView = async (reportId: string) => {
+    try {
+      setBusy({ id: reportId, action: 'view' });
+      setSummary(await generateReport(reportId));
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Failed to generate report', 'error');
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const handleDownload = async (reportId: string) => {
+    try {
+      setBusy({ id: reportId, action: 'download' });
+      const report = await generateReport(reportId);
+      downloadReportCsv(report);
+      toast('Report downloaded as CSV', 'success');
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Failed to generate report', 'error');
+    } finally {
+      setBusy(null);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -50,9 +86,8 @@ export default function PlacementReportsPage() {
     id: report.id || `${report.title || report.name || 'report'}-${report.generatedAt || report.createdAt || ''}`,
     title: report.title || report.name || 'Untitled Report',
     category: report.category || report.type || 'General',
+    description: report.description || '',
     generatedDate: report.generatedAt || report.createdAt || 'Unknown',
-    size: report.size ? report.size : report.sizeBytes ? `${Math.round(report.sizeBytes / 1024 / 1024 * 10) / 10} MB` : 'N/A',
-    status: report.status || 'Ready',
   }));
 
   return (
@@ -65,12 +100,9 @@ export default function PlacementReportsPage() {
           </h1>
           <p className="text-sm text-text-muted mt-1">
             Official institutional exports, compliance records, and skill gap advisory documentation.
+            Every figure is generated live from the evaluation database.
           </p>
         </div>
-
-        <GlassButton variant="primary" size="md" onClick={() => window.print()}>
-          Export Reports PDF
-        </GlassButton>
       </div>
 
       {/* Reports Listing */}
@@ -83,18 +115,30 @@ export default function PlacementReportsPage() {
                   <GlassBadge variant="default" size="sm">
                     {rep.category}
                   </GlassBadge>
-                  <span className="text-caption text-text-muted">Generated: {rep.generatedDate}</span>
+                  <span className="text-caption text-text-muted">Data as of: generated on demand</span>
                 </div>
                 <h3 className="text-base font-bold text-text mt-1.5">{rep.title}</h3>
-                <p className="text-caption text-text-faint mt-0.5">File size: {rep.size} • Format: PDF / CSV Bundle</p>
+                <p className="text-caption text-text-faint mt-0.5">
+                  {rep.description || 'CSV export · printable summary'}
+                </p>
               </div>
 
               <div className="flex items-center gap-2 shrink-0">
-                <GlassButton variant="secondary" size="sm">
-                  Download PDF
+                <GlassButton
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => handleDownload(rep.id)}
+                  disabled={busy !== null}
+                >
+                  {busy?.id === rep.id && busy?.action === 'download' ? 'Generating…' : 'Download CSV'}
                 </GlassButton>
-                <GlassButton variant="ghost" size="sm">
-                  View Summary
+                <GlassButton
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleView(rep.id)}
+                  disabled={busy !== null}
+                >
+                  {busy?.id === rep.id && busy?.action === 'view' ? 'Generating…' : 'View Summary'}
                 </GlassButton>
               </div>
             </GlassCard>
@@ -106,6 +150,62 @@ export default function PlacementReportsPage() {
           />
         )}
       </div>
+
+      {/* Summary dialog */}
+      <GlassDialog
+        open={summary !== null}
+        onClose={() => setSummary(null)}
+        title={summary?.title ?? 'Report summary'}
+      >
+        {summary && (
+          <div className="space-y-5">
+            <div className="flex items-center gap-2 flex-wrap">
+              <GlassBadge variant="default" size="sm">{summary.category}</GlassBadge>
+              <span className="text-caption text-text-muted">
+                Generated {formatDate(summary.generatedAt)} · live data
+              </span>
+            </div>
+
+            <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-1">
+              {summary.sections.map((section) => (
+                <div key={section.heading}>
+                  <h3 className="text-caption font-semibold uppercase tracking-wider text-text-muted mb-2">
+                    {section.heading}
+                  </h3>
+                  <dl className="space-y-1.5">
+                    {section.rows.length > 0 ? (
+                      section.rows.map((row, i) => (
+                        <div
+                          key={`${row.label}-${i}`}
+                          className="flex items-baseline justify-between gap-4 text-sm border-b border-border-subtle pb-1.5 last:border-0"
+                        >
+                          <dt className="text-text-muted min-w-0">{row.label}</dt>
+                          <dd className="font-semibold text-text text-right shrink-0 max-w-[55%]">{row.value}</dd>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-caption text-text-faint">No records yet.</p>
+                    )}
+                  </dl>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex justify-end gap-3 pt-2 border-t border-border-subtle">
+              <GlassButton variant="ghost" size="sm" onClick={() => setSummary(null)}>
+                Close
+              </GlassButton>
+              <GlassButton
+                variant="secondary"
+                size="sm"
+                onClick={() => summary && downloadReportCsv(summary)}
+              >
+                Download CSV
+              </GlassButton>
+            </div>
+          </div>
+        )}
+      </GlassDialog>
     </div>
   );
 }

@@ -16,11 +16,14 @@ import {
   fetchJobById,
   fetchMyProfile,
   fetchMyApplications,
+  fetchMyEvaluations,
   applyToJob,
   convertToFrontendJobDetail,
   convertToFrontendStudent,
   convertToFrontendApplication,
 } from '@/services/student-api';
+import { mapBackendEvaluationToMatchResult } from '@/types/api';
+import type { BackendEvaluation } from '@/types/api';
 import { formatDate } from '@/lib/utils';
 import type { Job, Student, Application, MatchResult } from '@/types';
 
@@ -33,6 +36,7 @@ export default function JobDetailPage() {
   const [job, setJob] = useState<Job | null>(null);
   const [student, setStudent] = useState<Student | null>(null);
   const [applications, setApplications] = useState<Application[]>([]);
+  const [evaluations, setEvaluations] = useState<BackendEvaluation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,10 +48,11 @@ export default function JobDetailPage() {
         setIsLoading(true);
         setError(null);
 
-        const [jobResult, profileResult, appsResult] = await Promise.all([
+        const [jobResult, profileResult, appsResult, evalsResult] = await Promise.all([
           fetchJobById(jobId),
           fetchMyProfile(),
           fetchMyApplications({ pageSize: 50 }),
+          fetchMyEvaluations(),
         ]);
 
         const frontendJob = convertToFrontendJobDetail(jobResult);
@@ -57,6 +62,7 @@ export default function JobDetailPage() {
         setJob(frontendJob);
         setStudent(frontendStudent);
         setApplications(frontendApps);
+        setEvaluations(evalsResult?.items || []);
         setIsLoading(false);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load job details');
@@ -69,24 +75,14 @@ export default function JobDetailPage() {
 
   const applied = applications.some((a) => a.jobId === jobId);
   const application = applications.find((a) => a.jobId === jobId);
-  const matchResult: MatchResult | null = application?.matchResult || null;
 
-  // Build a synthetic match result for display if none exists
-  const displayMatchResult: MatchResult = matchResult || {
-    jobId: job?.id || '',
-    studentId: student?.id || '',
-    overallScore: 0,
-    confidenceScore: 0,
-    eligibilityStatus: 'pending',
-    coveragePercent: 0,
-    strongSkills: [],
-    partialSkills: [],
-    missingSkills: job?.requiredSkills.map((s) => ({ ...s, status: 'missing' as const })) || [],
-    matchSummary: 'Match analysis will be available after you apply.',
-    analysisVersion: '2.1.0',
-    generatedAt: new Date().toISOString(),
-    requiresHumanReview: false,
-  };
+  // Prefer the application's stored result, else the student's standing
+  // evaluation for this job (evaluations exist independent of applying).
+  // No synthetic zeros: an unevaluated pair is "not evaluated", not "0%".
+  const jobEvaluation = evaluations.find((e) => e.jobVersion?.jobId === jobId);
+  const matchResult: MatchResult | null =
+    application?.matchResult ||
+    (jobEvaluation ? mapBackendEvaluationToMatchResult(jobEvaluation, jobId) : null);
 
   // Check eligibility
   const isEligible = (
@@ -98,8 +94,7 @@ export default function JobDetailPage() {
     job.eligibility.allowedPrograms.includes(student.program)
   );
 
-  const eligibilityStatus = isEligible ? 'eligible' : 'ineligible';
-  displayMatchResult.eligibilityStatus = eligibilityStatus as any;
+  const eligibilityStatus = (isEligible ? 'eligible' : 'ineligible') as MatchResult['eligibilityStatus'];
 
   if (isLoading) {
     return (
@@ -195,19 +190,28 @@ export default function JobDetailPage() {
           </div>
 
           <div className="flex flex-col items-end gap-2 shrink-0">
-            <MatchScore
-              score={displayMatchResult.overallScore}
-              confidence={displayMatchResult.confidenceScore}
-              eligibility={displayMatchResult.eligibilityStatus}
-              size="lg"
-            />
+            {matchResult ? (
+              <MatchScore
+                score={matchResult.overallScore}
+                confidence={matchResult.confidenceScore}
+                eligibility={eligibilityStatus}
+                size="lg"
+              />
+            ) : (
+              <div className="flex flex-col items-end gap-1.5">
+                <GlassBadge variant="muted" size="md">Not evaluated yet</GlassBadge>
+                <span className="text-caption text-text-faint text-right max-w-[180px]">
+                  The engine has not scored your profile against this drive.
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Action Row */}
         <div className="pt-4 border-t border-border-subtle flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-caption text-text-muted">
-            <EligibilityBadge status={displayMatchResult.eligibilityStatus} />
+            <EligibilityBadge status={eligibilityStatus} />
             <span>Deadline: <strong className="text-text">{formatDate(job.deadline)}</strong></span>
           </div>
 
@@ -280,13 +284,27 @@ export default function JobDetailPage() {
             )}
           </GlassCard>
 
-          {/* Matrix comparison */}
-          {student && (
+          {/* Matrix comparison — only for a real evaluation; a synthetic
+              all-missing matrix would misstate skills the student has */}
+          {student && matchResult ? (
             <ResumeComparison
               job={job}
               student={student}
-              matchResult={displayMatchResult}
+              matchResult={matchResult}
             />
+          ) : (
+            <GlassCard variant="surface" padding="md" className="space-y-2">
+              <h2 className="text-title font-bold text-text">Resume vs Requirements</h2>
+              <p className="text-sm text-text-muted">
+                This drive has not been evaluated against your profile yet, so no
+                per-skill evidence is available.
+              </p>
+              <Link href={`/student/match?jobId=${jobId}`} className="inline-block">
+                <GlassButton variant="secondary" size="sm">
+                  Run match analysis →
+                </GlassButton>
+              </Link>
+            </GlassCard>
           )}
         </div>
 

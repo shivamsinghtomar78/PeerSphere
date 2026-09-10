@@ -130,6 +130,32 @@ export async function uploadResume(file: File) {
   }
 }
 
+/**
+ * Download a resume version as a file.
+ * GET /api/v1/students/me/resumes/:id/download
+ *
+ * The route authenticates via the Authorization header, which a plain
+ * <a href> cannot send — so fetch the bytes through apiClient and hand the
+ * browser an object URL instead.
+ */
+export async function downloadMyResume(resumeId: string, filename: string): Promise<void> {
+  try {
+    const response = await apiClient.get<Blob>(`/students/me/resumes/${resumeId}/download`, {
+      responseType: 'blob',
+    });
+    const url = URL.createObjectURL(response.data);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename || 'resume.pdf';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+}
+
 // ─── Jobs ───────────────────────────────────────────────────────────
 
 /**
@@ -337,22 +363,45 @@ export function extractSkillGapsFromEvaluations(
     potentialMatchImprovement: number;
   }> = [];
 
+  const priorityOrder = { high: 3, medium: 2, low: 1 } as const;
+
   for (const evalData of evaluations) {
     if (evalData.recommendations && evalData.recommendations.length > 0) {
       for (const rec of evalData.recommendations) {
-        gaps.push({
-          id: rec.id || Math.random().toString(),
+        // The same skill can be recommended by several drives — keep one card
+        // per skill (the strongest occurrence), or React keys collide and the
+        // student sees "Docker" listed twice.
+        const slug = rec.skillName.toLowerCase().replace(/\s+/g, '-');
+        const candidate = {
+          id: slug,
           skill: {
-            id: rec.skillName.toLowerCase().replace(/\s+/g, '-'),
+            id: slug,
             name: rec.skillName,
             category: 'Unknown',
           },
           priority: rec.priority as 'high' | 'medium' | 'low',
           reason: rec.reason,
-          recommendation: rec.reason,
+          // A distinct actionable line — rec.reason already fills "why it matters"
+          recommendation: rec.steps?.[0]
+            ? `Start here: ${rec.steps[0]}`
+            : 'Add verifiable evidence for this skill — a project, certification, or repository link.',
           steps: rec.steps || [],
           potentialMatchImprovement: rec.potentialLift || 0,
-        });
+        };
+
+        const existingIndex = gaps.findIndex(
+          (g) => g.skill.name.toLowerCase() === rec.skillName.toLowerCase()
+        );
+        if (existingIndex === -1) {
+          gaps.push(candidate);
+        } else {
+          const existing = gaps[existingIndex];
+          const stronger =
+            candidate.potentialMatchImprovement > existing.potentialMatchImprovement ||
+            (candidate.potentialMatchImprovement === existing.potentialMatchImprovement &&
+              priorityOrder[candidate.priority] > priorityOrder[existing.priority]);
+          if (stronger) gaps[existingIndex] = candidate;
+        }
       }
     }
 

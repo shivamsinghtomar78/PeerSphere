@@ -125,13 +125,16 @@ export default function StudentApplicationsPage() {
 
                   <div className="flex items-center gap-4">
                     {matchResult && (
-                      <div className="hidden sm:block">
+                      <div className="hidden sm:flex flex-col items-center gap-1">
                         <MatchScore
                           score={matchResult.overallScore}
                           confidence={matchResult.confidenceScore}
                           size="sm"
                           showDetails={false}
                         />
+                        <span className="text-caption text-text-faint whitespace-nowrap">
+                          Score at evaluation
+                        </span>
                       </div>
                     )}
 

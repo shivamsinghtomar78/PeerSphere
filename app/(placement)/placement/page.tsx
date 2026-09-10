@@ -207,13 +207,21 @@ export default function PlacementDashboardPage() {
                     </div>
 
                     <div className="flex items-center gap-3">
-                      <MatchScore
-                        score={cand.matchResult.overallScore}
-                        confidence={cand.matchResult.confidenceScore}
+                      {cand.hasEvaluation ? (
+                        <MatchScore
+                          score={cand.matchResult.overallScore}
+                          confidence={cand.matchResult.confidenceScore}
+                          size="sm"
+                          showDetails={false}
+                        />
+                      ) : (
+                        <GlassBadge variant="muted" size="sm">Not evaluated</GlassBadge>
+                      )}
+                      <GlassButton
+                        href={`/placement/candidates/${cand.student.id}?jobId=${cand.matchResult.jobId}`}
+                        variant="ghost"
                         size="sm"
-                        showDetails={false}
-                      />
-                      <GlassButton href={`/placement/candidates/${cand.student.id}`} variant="ghost" size="sm">
+                      >
                         Inspect
                       </GlassButton>
                     </div>

@@ -334,6 +334,67 @@ export async function fetchReports(params?: ListQueryParams) {
   }
 }
 
+export interface ReportSection {
+  heading: string;
+  rows: Array<{ label: string; value: string }>;
+}
+
+export interface GeneratedReport {
+  id: string;
+  title: string;
+  category: string;
+  description: string;
+  generatedAt: string;
+  sections: ReportSection[];
+}
+
+/**
+ * Generate a report's content live from the database (PLACEMENT_ADMIN only)
+ * GET /api/v1/reports/:id
+ */
+export async function generateReport(reportId: string): Promise<GeneratedReport> {
+  try {
+    const response = await apiClient.get<{ success: boolean; data: GeneratedReport }>(
+      `/reports/${reportId}`
+    );
+    return response.data.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+}
+
+/**
+ * Download a generated report as a CSV file (client-side blob; the report
+ * endpoint authenticates via header, so a plain link cannot be used).
+ */
+export function downloadReportCsv(report: GeneratedReport): void {
+  const escape = (value: string) => `"${String(value).replace(/"/g, '""')}"`;
+  const lines: string[][] = [
+    ['Report', report.title],
+    ['Category', report.category],
+    ['Generated at', report.generatedAt],
+    [],
+  ] as string[][];
+  for (const section of report.sections) {
+    lines.push([section.heading]);
+    for (const row of section.rows) {
+      lines.push([row.label, row.value]);
+    }
+    lines.push([]);
+  }
+  const csv = lines.map((cells) => cells.map(escape).join(',')).join('\r\n');
+  // Leading BOM so Excel opens the file as UTF-8
+  const blob = new Blob([`﻿${csv}`], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${report.id}-${report.generatedAt.slice(0, 10)}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
 // ─── Dashboard Data Fetching ──────────────────────────────────────────
 
 /**
@@ -435,11 +496,21 @@ export async function fetchCandidatesForJob(jobId: string): Promise<Candidate[]>
           student,
           application: mapBackendApplicationToFrontend(app),
           matchResult,
-          rank: 0,
+          hasEvaluation: !!evalData,
           isShortlisted: app.status === 'SHORTLISTED',
           shortlistedAt: app.status === 'SHORTLISTED' ? app.updatedAt : undefined,
         };
       });
+
+    // Rank evaluated candidates 1..n by score; unevaluated rows carry no rank.
+    candidates.sort((a, b) => {
+      if (a.hasEvaluation !== b.hasEvaluation) return a.hasEvaluation ? -1 : 1;
+      return (b.matchResult.overallScore || 0) - (a.matchResult.overallScore || 0);
+    });
+    let nextRank = 1;
+    for (const candidate of candidates) {
+      if (candidate.hasEvaluation) candidate.rank = nextRank++;
+    }
 
     return candidates;
   } catch (error) {

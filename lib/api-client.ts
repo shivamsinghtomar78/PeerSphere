@@ -15,11 +15,24 @@ const USER_KEY = 'peersphere_user';
 // Create axios instance with default configuration
 export const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  // Generous ceiling: a cold serverless Postgres plus several stacked queries
+  // legitimately exceeds 10s — timing out then only multiplies the load.
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   },
 });
+
+// When the session is unrecoverable (no/failed refresh token), send the user
+// to sign-in instead of leaving every page looping 401s into error states.
+// Auth endpoints are exempt so a failed login doesn't trigger a reload loop.
+const redirectToAuth = (requestUrl?: string): void => {
+  if (typeof window === 'undefined') return;
+  if (requestUrl && requestUrl.includes('/auth/')) return;
+  const { pathname } = window.location;
+  if (pathname === '/auth' || pathname === '/') return;
+  window.location.assign('/auth');
+};
 
 // Flag to prevent infinite refresh loops
 let isRefreshing = false;
@@ -91,6 +104,8 @@ apiClient.interceptors.response.use(
           clearAuth();
         }
         processQueue(new Error('No refresh token available'), null);
+        isRefreshing = false;
+        redirectToAuth(originalRequest.url);
         return Promise.reject(error);
       }
 
@@ -120,6 +135,7 @@ apiClient.interceptors.response.use(
           clearAuth();
         }
         processQueue(new Error('Token refresh failed'), null);
+        redirectToAuth(originalRequest.url);
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

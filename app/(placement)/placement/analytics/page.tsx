@@ -108,12 +108,20 @@ export default function PlacementAnalyticsPage() {
         deptMap[dept].eligible++;
       }
     }
+    // Axis labels get ~60px — abbreviate long department names to initials
+    // ("Information Technology" → "IT"); the tooltip carries the full name.
+    const shortDeptLabel = (name: string) =>
+      name.length <= 8
+        ? name
+        : name
+            .split(/[\s&/]+/)
+            .filter(Boolean)
+            .map((word) => word[0].toUpperCase())
+            .join('');
     for (const [dept, data] of Object.entries(deptMap)) {
       departmentReadiness.push({
-        dept,
-        fullName: dept === 'CSE' ? 'Computer Science & Engineering' : 
-                  dept === 'IT' ? 'Information Technology' :
-                  dept === 'ECE' ? 'Electronics & Communication' : dept,
+        dept: shortDeptLabel(dept),
+        fullName: dept,
         readiness: Math.round(data.readinessSum / data.total),
         students: data.total,
         eligible: data.eligible,
@@ -286,7 +294,7 @@ export default function PlacementAnalyticsPage() {
                 tick={{ fontSize: 12, fill: 'var(--ps-text, #f1f5f9)', fontWeight: 600 }}
                 tickLine={false}
                 axisLine={false}
-                width={40}
+                width={64}
               />
               <Tooltip
                 cursor={{ fill: 'rgba(255,255,255,0.05)' }}

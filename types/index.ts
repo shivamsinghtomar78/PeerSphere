@@ -130,7 +130,11 @@ export interface Application {
 export interface Candidate {
   student: Student;
   application: Application;
+  /** Placeholder zeros when hasEvaluation is false — check before displaying */
   matchResult: MatchResult;
+  /** False when the engine has not evaluated this student for the job yet */
+  hasEvaluation?: boolean;
+  /** 1-based rank among evaluated candidates; undefined when not evaluated */
   rank?: number;
   isShortlisted: boolean;
   shortlistedAt?: string;

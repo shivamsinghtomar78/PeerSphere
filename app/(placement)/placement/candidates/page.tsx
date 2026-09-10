@@ -37,15 +37,20 @@ export default function CandidateRankingPage() {
         const jobsData = await fetchAllJobs({ pageSize: 20, status: 'PUBLISHED' });
         const backendJobs = jobsData?.items || [];
         setJobs(backendJobs);
-        
-        // Select first job and fetch candidates for it
+
+        // Honour a ?jobId= deep link; fall back to the first published job.
+        // Candidates load in the [selectedJobId] effect — fetching them here
+        // too issued every request twice and, on a cold database, pushed the
+        // stacked calls past the client timeout.
         if (backendJobs.length > 0) {
-          setSelectedJobId(backendJobs[0].jobId);
-          const candidatesData = await fetchCandidatesForJob(backendJobs[0].jobId);
-          setCandidates(candidatesData);
+          const requestedJobId = new URLSearchParams(window.location.search).get('jobId');
+          const initialJobId = backendJobs.some((j) => j.jobId === requestedJobId)
+            ? (requestedJobId as string)
+            : backendJobs[0].jobId;
+          setSelectedJobId(initialJobId);
+        } else {
+          setIsLoading(false);
         }
-        
-        setIsLoading(false);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load candidates');
         setIsLoading(false);
@@ -55,16 +60,18 @@ export default function CandidateRankingPage() {
     fetchData();
   }, []);
 
-  // Fetch candidates when selected job changes
+  // Fetch candidates when selected job changes (including the initial selection)
   useEffect(() => {
     if (!selectedJobId) return;
-    
+
     const fetchCandidates = async () => {
       try {
         const candidatesData = await fetchCandidatesForJob(selectedJobId);
         setCandidates(candidatesData);
+        setIsLoading(false);
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to load candidates for this job';
+        setIsLoading(false);
         toast(message, 'error');
       }
     };
@@ -267,13 +274,13 @@ export default function CandidateRankingPage() {
                 <tr key={cand.student.id} className="hover:bg-surface-raised/50 transition-base">
                   <td className="py-3 px-4">
                     <span className="w-7 h-7 rounded-md bg-canvas-subtle border border-border-subtle flex items-center justify-center font-bold text-xs tabular text-text-muted">
-                      #{cand.rank}
+                      {cand.rank ? `#${cand.rank}` : '—'}
                     </span>
                   </td>
 
                   <td className="py-3 px-4">
                     <div className="font-semibold text-text hover:text-accent">
-                      <Link href={`/placement/candidates/${cand.student.id}`}>{cand.student.name}</Link>
+                      <Link href={`/placement/candidates/${cand.student.id}?jobId=${selectedJobId}`}>{cand.student.name}</Link>
                     </div>
                     <div className="text-caption text-text-muted mt-0.5">
                       {cand.student.rollNumber} • CGPA: <strong className="text-text tabular">{formatCgpa(cand.student.cgpa)}</strong>
@@ -281,19 +288,31 @@ export default function CandidateRankingPage() {
                   </td>
 
                   <td className="py-3 px-4">
-                    <MatchScore
-                      score={cand.matchResult.overallScore}
-                      size="sm"
-                      showDetails={false}
-                    />
+                    {cand.hasEvaluation ? (
+                      <MatchScore
+                        score={cand.matchResult.overallScore}
+                        size="sm"
+                        showDetails={false}
+                      />
+                    ) : (
+                      <GlassBadge variant="muted" size="sm">Not evaluated</GlassBadge>
+                    )}
                   </td>
 
                   <td className="py-3 px-4">
-                    <ConfidenceBadge confidence={cand.matchResult.confidenceScore} />
+                    {cand.hasEvaluation ? (
+                      <ConfidenceBadge confidence={cand.matchResult.confidenceScore} />
+                    ) : (
+                      <span className="text-caption text-text-faint">—</span>
+                    )}
                   </td>
 
                   <td className="py-3 px-4">
-                    <EligibilityBadge status={cand.matchResult.eligibilityStatus} />
+                    {cand.hasEvaluation ? (
+                      <EligibilityBadge status={cand.matchResult.eligibilityStatus} />
+                    ) : (
+                      <span className="text-caption text-text-faint">Awaiting evaluation</span>
+                    )}
                   </td>
 
                   <td className="py-3 px-4">
@@ -306,12 +325,17 @@ export default function CandidateRankingPage() {
                           +{cand.matchResult.strongSkills.length - 2}
                         </span>
                       )}
+                      {!cand.hasEvaluation && (
+                        <span className="text-caption text-text-faint">—</span>
+                      )}
                     </div>
                   </td>
 
                   <td className="py-3 px-4">
                     <div className="flex flex-wrap gap-1 max-w-[160px]">
-                      {cand.matchResult.missingSkills.length > 0 ? (
+                      {!cand.hasEvaluation ? (
+                        <span className="text-caption text-text-faint">—</span>
+                      ) : cand.matchResult.missingSkills.length > 0 ? (
                         cand.matchResult.missingSkills.slice(0, 2).map((sk) => (
                           <SkillChip key={sk.id} skill={sk} status="missing" size="sm" />
                         ))
@@ -323,7 +347,7 @@ export default function CandidateRankingPage() {
 
                   <td className="py-3 px-4 text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <GlassButton href={`/placement/candidates/${cand.student.id}`} variant="ghost" size="sm">
+                      <GlassButton href={`/placement/candidates/${cand.student.id}?jobId=${selectedJobId}`} variant="ghost" size="sm">
                         Inspect
                       </GlassButton>
                       <GlassButton

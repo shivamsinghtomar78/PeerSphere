@@ -81,17 +81,9 @@ export default function CandidateComparisonPage() {
   }
 
   const frontendJobs = jobs.map(convertToFrontendJob);
-  const targetJob = frontendJobs[0] || null;
+  // The comparison criteria must belong to the drive the candidates came from
+  const targetJob = frontendJobs.find((j) => j.id === selectedJobId) || frontendJobs[0] || null;
   const compareStudents = candidates.map((c) => c.student);
-
-  // Fallback for candidates without a match result yet
-  const fallbackMatch = {
-    overallScore: 0,
-    confidenceScore: 0,
-    eligibilityStatus: 'pending' as const,
-    strongSkills: [] as Skill[],
-    partialSkills: [] as Skill[],
-  };
 
   if (!targetJob || compareStudents.length === 0) {
     return (
@@ -144,7 +136,6 @@ export default function CandidateComparisonPage() {
                 <th className="py-4 px-4 font-semibold text-text-muted w-1/4">Evaluation Attribute</th>
                 {compareStudents.map((stu) => {
                   const candidate = candidates.find((c) => c.student.id === stu.id);
-                  const match = candidate?.matchResult ?? fallbackMatch;
                   return (
                     <th key={stu.id} className="py-4 px-4 font-bold text-text w-1/4">
                       <div className="flex items-center justify-between gap-2">
@@ -154,7 +145,11 @@ export default function CandidateComparisonPage() {
                             {stu.rollNumber} • {stu.department}
                           </div>
                         </div>
-                        <EligibilityBadge status={match.eligibilityStatus} />
+                        {candidate?.hasEvaluation ? (
+                          <EligibilityBadge status={candidate.matchResult.eligibilityStatus} />
+                        ) : (
+                          <GlassBadge variant="muted" size="sm">Not evaluated</GlassBadge>
+                        )}
                       </div>
                     </th>
                   );
@@ -168,10 +163,17 @@ export default function CandidateComparisonPage() {
                 <td className="py-4 px-4 font-bold text-text">AI Match Score</td>
                 {compareStudents.map((stu) => {
                   const candidate = candidates.find((c) => c.student.id === stu.id);
-                  const match = candidate?.matchResult ?? fallbackMatch;
                   return (
                     <td key={stu.id} className="py-4 px-4">
-                      <MatchScore score={match.overallScore} confidence={match.confidenceScore} size="sm" />
+                      {candidate?.hasEvaluation ? (
+                        <MatchScore
+                          score={candidate.matchResult.overallScore}
+                          confidence={candidate.matchResult.confidenceScore}
+                          size="sm"
+                        />
+                      ) : (
+                        <span className="text-caption text-text-faint">Not evaluated yet</span>
+                      )}
                     </td>
                   );
                 })}
@@ -224,7 +226,16 @@ export default function CandidateComparisonPage() {
                   <td className="py-3 px-4 font-medium text-text">{skillName}</td>
                   {compareStudents.map((stu) => {
                     const candidate = candidates.find((c) => c.student.id === stu.id);
-                    const match = candidate?.matchResult ?? fallbackMatch;
+                    // Without an evaluation there is no evidence either way —
+                    // a red "missing" chip would misstate skills the student has
+                    if (!candidate?.hasEvaluation) {
+                      return (
+                        <td key={stu.id} className="py-3 px-4 text-text-faint">
+                          —
+                        </td>
+                      );
+                    }
+                    const match = candidate.matchResult;
                     const isStrong = match.strongSkills.some((s) => s.name.toLowerCase() === skillName.toLowerCase());
                     const isPartial = match.partialSkills.some((s) => s.name.toLowerCase() === skillName.toLowerCase());
                     const status = isStrong ? 'strong' : isPartial ? 'partial' : 'missing';
@@ -244,7 +255,7 @@ export default function CandidateComparisonPage() {
                 {compareStudents.map((stu) => (
                   <td key={stu.id} className="py-4 px-4">
                     <div className="flex items-center gap-2">
-                      <GlassButton href={`/placement/candidates/${stu.id}`} variant="ghost" size="sm">
+                      <GlassButton href={`/placement/candidates/${stu.id}?jobId=${selectedJobId}`} variant="ghost" size="sm">
                         Inspect
                       </GlassButton>
                       <GlassButton variant="primary" size="sm">

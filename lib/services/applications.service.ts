@@ -134,6 +134,13 @@ export async function applyToJob(studentId: string, jobId: string) {
   const jobVersion = await getLatestJobVersion(jobId);
   if (!jobVersion) throw new ApiError(404, 'NOT_FOUND', 'JobVersion');
 
+  // 2b. Reject past-deadline applications (deadline is inclusive of its day)
+  if (jobVersion.deadline && new Date(jobVersion.deadline) < new Date()) {
+    throw new ApiError(422, 'UNPROCESSABLE', 'The application deadline for this job has passed', {
+      deadline: jobVersion.deadline,
+    });
+  }
+
   // 3. Check eligibility
   const eligibility = await checkEligibility(studentId, jobVersion.id);
   if (eligibility.status === 'INELIGIBLE') {

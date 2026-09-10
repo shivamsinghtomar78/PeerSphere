@@ -19,6 +19,7 @@ import {
   convertToFrontendJob,
   getPrimaryMatch,
 } from '@/services/student-api';
+import { mapBackendEvaluationToMatchResult } from '@/types/api';
 import type { BackendJob, BackendEvaluation, BackendStudent } from '@/types/api';
 import type { Job, Student, MatchResult } from '@/types';
 
@@ -48,9 +49,14 @@ export default function MatchAnalysisPage() {
         setEvaluations(backendEvaluations);
         setStudent(frontendStudent);
 
-        // Set initial selected job - use first published job or empty string
+        // Honour a ?jobId= deep link (job detail's "Detailed Match Breakdown"
+        // navigates here); fall back to the first published job.
         if (backendJobs.length > 0) {
-          setSelectedJobId(backendJobs[0].jobId);
+          const requestedJobId = new URLSearchParams(window.location.search).get('jobId');
+          const requestedJob = requestedJobId
+            ? backendJobs.find((j) => j.jobId === requestedJobId)
+            : undefined;
+          setSelectedJobId(requestedJob ? requestedJob.jobId : backendJobs[0].jobId);
         }
 
         setIsLoading(false);
@@ -70,24 +76,13 @@ export default function MatchAnalysisPage() {
   // Find evaluation for selected job
   const selectedEvaluation = evaluations.find((e) => e.jobVersion?.jobId === selectedJobId);
 
-  // Create MatchResult from evaluation
+  // Create MatchResult from evaluation — the shared mapper splits
+  // requirementMatches into strong/partial/missing skill evidence.
   const matchResult: MatchResult | null = selectedEvaluation
-    ? {
-        jobId: selectedEvaluation.jobVersion?.jobId || selectedJobId,
-        studentId: selectedEvaluation.studentId,
-        overallScore: selectedEvaluation.overallScore || 0,
-        confidenceScore: selectedEvaluation.confidenceScore || 0,
-        eligibilityStatus: selectedEvaluation.eligibility as any,
-        coveragePercent: selectedEvaluation.coveragePercent || 0,
-        strongSkills: [],
-        partialSkills: [],
-        missingSkills: [],
-        matchSummary: selectedEvaluation.matchSummary || '',
-        analysisVersion: '2.1.0',
-        generatedAt: selectedEvaluation.updatedAt,
-        requiresHumanReview: selectedEvaluation.requiresReview,
-        humanReviewNote: selectedEvaluation.reviewNote,
-      }
+    ? mapBackendEvaluationToMatchResult(
+        selectedEvaluation,
+        selectedEvaluation.jobVersion?.jobId || selectedJobId
+      )
     : null;
 
   // If we have jobs but no evaluation for selected job, try to queue one

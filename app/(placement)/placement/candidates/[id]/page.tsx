@@ -18,6 +18,7 @@ import {
   fetchStudentById,
   fetchJobById,
   fetchAllApplications,
+  fetchEvaluationsByJobId,
   updateApplicationStatus,
   convertToFrontendStudent,
   convertToFrontendJobDetail,
@@ -69,10 +70,14 @@ export default function CandidateDetailPage() {
               new Date(b.appliedAt).getTime() - new Date(a.appliedAt).getTime()
           );
 
-        // Prefer the newest application that HAS an evaluation — the page's
-        // purpose is reviewing the evaluation; fall back to the newest overall.
+        // Honour the drive the officer came from (?jobId= on the Inspect link);
+        // otherwise prefer the newest application that HAS an evaluation, then
+        // the newest overall.
+        const requestedJobId = new URLSearchParams(window.location.search).get('jobId');
         const app =
-          studentApps?.find((a) => a.latestEvaluation) ?? studentApps?.[0];
+          studentApps?.find((a) => requestedJobId && a.jobId === requestedJobId) ??
+          studentApps?.find((a) => a.latestEvaluation) ??
+          studentApps?.[0];
         if (app) {
           setApplicationId(app.id);
           setShortlisted(app.status === 'SHORTLISTED');
@@ -81,8 +86,18 @@ export default function CandidateDetailPage() {
           const backendJob = await fetchJobById(jobId);
           if (backendJob) setJob(convertToFrontendJobDetail(backendJob));
 
-          const evalData =
+          // The applications list's latestEvaluation is a summary without
+          // requirementMatches — fetch the full evaluation so the score
+          // decomposition (per-skill evidence) can actually render.
+          let evalData =
             (app.latestEvaluation as BackendEvaluation | null | undefined) ?? null;
+          try {
+            const fullEvals = await fetchEvaluationsByJobId(jobId, { pageSize: 100 });
+            const fullEval = fullEvals?.items?.find((e) => e.studentId === studentId);
+            if (fullEval) evalData = fullEval;
+          } catch {
+            // fall back to the summary evaluation
+          }
           if (evalData) {
             setMatchResult(mapBackendEvaluationToMatchResult(evalData, jobId));
             setEvaluationId(evalData.id);
@@ -177,22 +192,38 @@ export default function CandidateDetailPage() {
     );
   }
 
-  // If no match result, create a default one
-  const displayMatchResult = matchResult || {
-    jobId: job.id,
-    studentId: student.id,
-    overallScore: 0,
-    confidenceScore: 0,
-    eligibilityStatus: 'pending' as const,
-    coveragePercent: 0,
-    strongSkills: [],
-    partialSkills: [],
-    missingSkills: [],
-    matchSummary: '',
-    analysisVersion: '2.1.0',
-    generatedAt: new Date().toISOString(),
-    requiresHumanReview: false,
-  };
+  // Deterministic eligibility rule results — the same rules the engine
+  // applies, each shown pass/fail with the candidate's own numbers.
+  const eligibilityRules = [
+    {
+      label: 'Minimum CGPA',
+      requirement: `CGPA ≥ ${job.eligibility.minCgpa}`,
+      actual: `Candidate: ${formatCgpa(student.cgpa)}`,
+      pass: student.cgpa >= (job.eligibility.minCgpa || 0),
+    },
+    {
+      label: 'Active backlogs',
+      requirement: `Backlogs ≤ ${job.eligibility.maxBacklogs}`,
+      actual: `Candidate: ${student.activeBacklogs}`,
+      pass: student.activeBacklogs <= (job.eligibility.maxBacklogs || 0),
+    },
+    {
+      label: 'Department',
+      requirement: job.eligibility.allowedDepartments.join(', '),
+      actual: `Candidate: ${student.department}`,
+      pass: job.eligibility.allowedDepartments.includes(student.department),
+    },
+    {
+      label: 'Program',
+      requirement: job.eligibility.allowedPrograms.join(', '),
+      actual: `Candidate: ${student.program}`,
+      pass: job.eligibility.allowedPrograms.includes(student.program),
+    },
+  ];
+  const rulesPassed = eligibilityRules.filter((r) => r.pass).length;
+  const eligibilityStatus =
+    matchResult?.eligibilityStatus ??
+    ((rulesPassed === eligibilityRules.length ? 'eligible' : 'ineligible') as MatchResult['eligibilityStatus']);
 
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-5xl mx-auto">
@@ -208,8 +239,8 @@ export default function CandidateDetailPage() {
       </Link>
 
       {/* Flagged Review Warning */}
-      {displayMatchResult.requiresHumanReview && (
-        <HumanReviewBanner note={displayMatchResult.humanReviewNote} />
+      {matchResult?.requiresHumanReview && (
+        <HumanReviewBanner note={matchResult.humanReviewNote} />
       )}
 
       {/* Candidate Hero Card */}
@@ -220,7 +251,7 @@ export default function CandidateDetailPage() {
               <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-text">
                 {student.name}
               </h1>
-              <EligibilityBadge status={displayMatchResult.eligibilityStatus} />
+              <EligibilityBadge status={eligibilityStatus} />
             </div>
             <div className="flex items-center gap-2 mt-2 flex-wrap text-sm text-text-muted">
               <span>{student.rollNumber}</span>
@@ -234,20 +265,29 @@ export default function CandidateDetailPage() {
           </div>
 
           <div className="shrink-0">
-            <MatchScore
-              score={displayMatchResult.overallScore}
-              confidence={displayMatchResult.confidenceScore}
-              size="lg"
-            />
+            {matchResult ? (
+              <MatchScore
+                score={matchResult.overallScore}
+                confidence={matchResult.confidenceScore}
+                size="lg"
+              />
+            ) : (
+              <div className="flex flex-col items-end gap-1.5">
+                <GlassBadge variant="muted" size="md">Not evaluated</GlassBadge>
+                <span className="text-caption text-text-faint text-right max-w-[180px]">
+                  The engine has not scored this candidate for this drive yet.
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Action Toolbar */}
         <div className="pt-4 border-t border-border-subtle flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <ConfidenceBadge confidence={displayMatchResult.confidenceScore} />
+            {matchResult && <ConfidenceBadge confidence={matchResult.confidenceScore} />}
             <span className="text-caption text-text-faint">
-              Evaluated against: {job.title} ({job.company})
+              {matchResult ? 'Evaluated against' : 'Reviewing for'}: {job.title} ({job.company})
             </span>
           </div>
 
@@ -349,63 +389,113 @@ export default function CandidateDetailPage() {
         </div>
       </GlassDialog>
 
+      {/* Eligibility Rule Results — pass/fail with the candidate's numbers */}
+      <GlassCard variant="surface" padding="md" className="space-y-3">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <h2 className="text-title font-bold text-text">Eligibility Rule Results</h2>
+          <span className="text-caption text-text-muted">
+            {rulesPassed} of {eligibilityRules.length} rules met
+          </span>
+        </div>
+        <ul className="space-y-2">
+          {eligibilityRules.map((rule) => (
+            <li
+              key={rule.label}
+              className="flex items-start gap-2.5 text-sm border-b border-border-subtle pb-2 last:border-0 last:pb-0"
+            >
+              <span
+                className={
+                  rule.pass
+                    ? 'shrink-0 font-bold text-success'
+                    : 'shrink-0 font-bold text-danger'
+                }
+                aria-hidden="true"
+              >
+                {rule.pass ? '✓' : '✕'}
+              </span>
+              <span className="text-text-muted">
+                {rule.label}: {rule.requirement} — <strong className="text-text">{rule.actual}</strong>{' '}
+                <span className={rule.pass ? 'text-success font-semibold' : 'text-danger font-semibold'}>
+                  · {rule.pass ? 'Met' : 'Not met'}
+                </span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      </GlassCard>
+
       {/* Breakdown Matrix */}
-      <div className="space-y-6">
-        {/* Skills Section */}
-        <GlassCard variant="surface" padding="md" className="space-y-4">
-          <h2 className="text-title font-bold text-text">Skill Matching Categorization</h2>
+      {matchResult ? (
+        <div className="space-y-6">
+          {/* Skills Section */}
+          <GlassCard variant="surface" padding="md" className="space-y-4">
+            <h2 className="text-title font-bold text-text">Skill Matching Categorization</h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-3 rounded-lg bg-canvas-subtle border border-border-subtle space-y-2">
-              <span className="text-caption font-bold text-success uppercase tracking-wider block">
-                Strong Matches ({displayMatchResult.strongSkills.length})
-              </span>
-              <div className="flex flex-wrap gap-1">
-                {displayMatchResult.strongSkills.map((sk) => (
-                  <SkillChip key={sk.id} skill={sk} status="strong" size="sm" />
-                ))}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="p-3 rounded-lg bg-canvas-subtle border border-border-subtle space-y-2">
+                <span className="text-caption font-bold text-success uppercase tracking-wider block">
+                  Strong Matches ({matchResult.strongSkills.length})
+                </span>
+                <div className="flex flex-wrap gap-1">
+                  {matchResult.strongSkills.length > 0 ? (
+                    matchResult.strongSkills.map((sk) => (
+                      <SkillChip key={sk.id} skill={sk} status="strong" size="sm" />
+                    ))
+                  ) : (
+                    <span className="text-caption text-text-faint">No strong matches</span>
+                  )}
+                </div>
+              </div>
+
+              <div className="p-3 rounded-lg bg-canvas-subtle border border-border-subtle space-y-2">
+                <span className="text-caption font-bold text-warning uppercase tracking-wider block">
+                  Partial Matches ({matchResult.partialSkills.length})
+                </span>
+                <div className="flex flex-wrap gap-1">
+                  {matchResult.partialSkills.length > 0 ? (
+                    matchResult.partialSkills.map((sk) => (
+                      <SkillChip key={sk.id} skill={sk} status="partial" size="sm" />
+                    ))
+                  ) : (
+                    <span className="text-caption text-text-faint">No partial matches</span>
+                  )}
+                </div>
+              </div>
+
+              <div className="p-3 rounded-lg bg-canvas-subtle border border-border-subtle space-y-2">
+                <span className="text-caption font-bold text-danger uppercase tracking-wider block">
+                  Identified Gaps ({matchResult.missingSkills.length})
+                </span>
+                <div className="flex flex-wrap gap-1">
+                  {matchResult.missingSkills.length > 0 ? (
+                    matchResult.missingSkills.map((sk) => (
+                      <SkillChip key={sk.id} skill={sk} status="missing" size="sm" />
+                    ))
+                  ) : (
+                    <span className="text-caption text-success font-medium">None</span>
+                  )}
+                </div>
               </div>
             </div>
+          </GlassCard>
 
-            <div className="p-3 rounded-lg bg-canvas-subtle border border-border-subtle space-y-2">
-              <span className="text-caption font-bold text-warning uppercase tracking-wider block">
-                Partial Matches ({displayMatchResult.partialSkills.length})
-              </span>
-              <div className="flex flex-wrap gap-1">
-                {displayMatchResult.partialSkills.length > 0 ? (
-                  displayMatchResult.partialSkills.map((sk) => (
-                    <SkillChip key={sk.id} skill={sk} status="partial" size="sm" />
-                  ))
-                ) : (
-                  <span className="text-caption text-text-faint">No partial matches</span>
-                )}
-              </div>
-            </div>
-
-            <div className="p-3 rounded-lg bg-canvas-subtle border border-border-subtle space-y-2">
-              <span className="text-caption font-bold text-danger uppercase tracking-wider block">
-                Identified Gaps ({displayMatchResult.missingSkills.length})
-              </span>
-              <div className="flex flex-wrap gap-1">
-                {displayMatchResult.missingSkills.length > 0 ? (
-                  displayMatchResult.missingSkills.map((sk) => (
-                    <SkillChip key={sk.id} skill={sk} status="missing" size="sm" />
-                  ))
-                ) : (
-                  <span className="text-caption text-success font-medium">None</span>
-                )}
-              </div>
-            </div>
-          </div>
+          {/* Matrix Comparison */}
+          <ResumeComparison
+            job={job}
+            student={student}
+            matchResult={matchResult}
+          />
+        </div>
+      ) : (
+        <GlassCard variant="surface" padding="md" className="space-y-2">
+          <h2 className="text-title font-bold text-text">Score Decomposition</h2>
+          <p className="text-sm text-text-muted">
+            No evaluation exists for this candidate on this drive yet, so there is
+            no per-skill evidence to decompose. The engine evaluates queued
+            profiles at its next run.
+          </p>
         </GlassCard>
-
-        {/* Matrix Comparison */}
-        <ResumeComparison
-          job={job}
-          student={student}
-          matchResult={displayMatchResult}
-        />
-      </div>
+      )}
     </div>
   );
 }
