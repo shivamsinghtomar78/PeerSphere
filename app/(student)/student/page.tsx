@@ -18,8 +18,9 @@ import {
   convertToFrontendJob,
   convertToFrontendApplication,
 } from '@/services/student-api';
-import type { BackendStudent, BackendJob, BackendApplication, BackendEvaluation } from '@/types/api';
-import type { Student, Job, Application, MatchResult, SkillGap, Recommendation } from '@/types';
+import { mapBackendEvaluationToMatchResult } from '@/types/api';
+import type { BackendJob, BackendEvaluation } from '@/types/api';
+import type { Student, Job, Application, MatchResult, Recommendation } from '@/types';
 
 export default function StudentDashboardPage() {
   const [dashboardData, setDashboardData] = useState<{
@@ -89,23 +90,10 @@ export default function StudentDashboardPage() {
   // Convert recommended backend jobs to frontend jobs for display
   const recommendedFrontendJobs = recommendedJobs.map(convertToFrontendJob);
 
-  // Create MatchResult from primary evaluation
+  // Create MatchResult from the primary evaluation via the shared mapper —
+  // hand-rolling it here once shipped empty skill arrays (Bug 1's pattern)
   const matchResult: MatchResult | null = primaryMatch
-    ? {
-        jobId: primaryMatch.jobVersion?.jobId || '',
-        studentId: primaryMatch.studentId,
-        overallScore: primaryMatch.overallScore || 0,
-        confidenceScore: primaryMatch.confidenceScore || 0,
-        eligibilityStatus: primaryMatch.eligibility as any,
-        coveragePercent: primaryMatch.coveragePercent || 0,
-        strongSkills: [],
-        partialSkills: [],
-        missingSkills: [],
-        matchSummary: primaryMatch.matchSummary || '',
-        analysisVersion: '2.1.0',
-        generatedAt: primaryMatch.updatedAt,
-        requiresHumanReview: primaryMatch.requiresReview,
-      }
+    ? mapBackendEvaluationToMatchResult(primaryMatch, primaryMatch.jobVersion?.jobId || '')
     : null;
 
   // Get primary recommendation from skill gaps
@@ -405,7 +393,7 @@ export default function StudentDashboardPage() {
                       <h4 className="text-sm font-semibold text-text">{job.title}</h4>
                       <p className="text-xs text-text-muted">{job.company}</p>
                     </div>
-                    <GlassBadge variant={statusBadge as any} size="sm">
+                    <GlassBadge variant={statusBadge} size="sm">
                       {app.status === 'under_review' ? 'Under Review' : app.status === 'shortlisted' ? 'Shortlisted' : app.status === 'applied' ? 'Applied' : app.status}
                     </GlassBadge>
                   </div>

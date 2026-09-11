@@ -17,11 +17,10 @@ import {
   queueEvaluation,
   convertToFrontendStudent,
   convertToFrontendJob,
-  getPrimaryMatch,
-} from '@/services/student-api';
+  } from '@/services/student-api';
 import { mapBackendEvaluationToMatchResult } from '@/types/api';
-import type { BackendJob, BackendEvaluation, BackendStudent } from '@/types/api';
-import type { Job, Student, MatchResult } from '@/types';
+import type { BackendJob, BackendEvaluation } from '@/types/api';
+import type { Student, MatchResult } from '@/types';
 
 export default function MatchAnalysisPage() {
   const [jobs, setJobs] = useState<BackendJob[]>([]);

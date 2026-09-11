@@ -7,9 +7,27 @@ interface ThemeContextValue {
   theme: Theme;
   resolvedTheme: 'light' | 'dark';
   setTheme: (theme: Theme) => void;
+  /**
+   * False during SSR and the hydration render, true afterwards. `theme` and
+   * `resolvedTheme` come from localStorage, which the server cannot see — any
+   * consumer that renders markup derived from them MUST fall back to the
+   * server defaults ('system' / 'light') until this is true, or the markup
+   * will hydrate-mismatch.
+   */
+  hydrated: boolean;
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
+
+// A subscribe that never fires: the snapshot flips from false (server) to
+// true (client) exactly once, at hydration — no state, no extra render pass.
+const emptySubscribe = () => () => {};
+const useHydrated = () =>
+  React.useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false
+  );
 
 function resolveTheme(t: Theme): 'light' | 'dark' {
   if (typeof window === 'undefined') return 'light';
@@ -25,12 +43,14 @@ function getStoredTheme(): Theme {
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const initialTheme = getStoredTheme();
-  const [theme, setThemeState] = useState<Theme>(initialTheme);
-  const themeRef = useRef(initialTheme);
+  // Lazy initializers: read localStorage once, not on every provider render
+  const [theme, setThemeState] = useState<Theme>(getStoredTheme);
+  const themeRef = useRef<Theme | null>(null);
+  if (themeRef.current === null) themeRef.current = theme;
   const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>(() =>
-    resolveTheme(initialTheme)
+    resolveTheme(getStoredTheme())
   );
+  const hydrated = useHydrated();
 
   // Apply theme attribute on mount and subscribe to system preference changes
   useEffect(() => {
@@ -60,7 +80,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <ThemeContext.Provider value={{ theme, resolvedTheme, setTheme }}>
+    <ThemeContext.Provider value={{ theme, resolvedTheme, setTheme, hydrated }}>
       {children}
     </ThemeContext.Provider>
   );

@@ -17,18 +17,13 @@ const themes: { value: Theme; label: string; iconPath: string }[] = [
 ];
 
 export function ThemeSwitcher({ compact = false }: ThemeSwitcherProps) {
-  const { theme: storedTheme, setTheme } = useTheme();
+  const { theme: storedTheme, setTheme, hydrated } = useTheme();
 
   // The stored theme comes from localStorage, which the server can't see —
-  // render the server default until mounted to avoid a hydration mismatch.
-  // useSyncExternalStore (rather than a mount-flag state + effect) gives that
-  // signal without calling setState from inside an effect body.
-  const mounted = React.useSyncExternalStore(
-    () => () => {}, // value never changes after the initial client render
-    () => true, // client snapshot
-    () => false // server snapshot
-  );
-  const theme: Theme = mounted ? storedTheme : 'system';
+  // render the server default until hydrated to avoid a hydration mismatch.
+  // The signal comes from the ThemeProvider so every theme consumer guards
+  // the same way instead of rolling its own mount flag.
+  const theme: Theme = hydrated ? storedTheme : 'system';
 
   if (compact) {
     // Cycle through themes on click

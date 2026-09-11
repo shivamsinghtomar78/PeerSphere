@@ -14,17 +14,16 @@ import {
 import { GlassCard } from '@/components/ui/GlassCard';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { StatCard } from '@/components/product/StatCard';
-import { LoadingState, EmptyState, ErrorState } from '@/components/states';
+import { LoadingState, ErrorState } from '@/components/states';
 import {
   fetchPlacementStats,
   fetchSkillGapsAnalysis,
   fetchAllStudents,
-  mapBackendPlacementStatsToFrontend,
   mapBackendSkillGapsToFrontend,
   convertToFrontendStudent,
 } from '@/services/placement-api';
-import type { BackendPlacementStats, BackendSkillGaps, BackendStudentList } from '@/types/api';
-import type { PlacementStat, SkillGapDistribution, Student } from '@/types';
+import type { BackendPlacementStats } from '@/types/api';
+import type { SkillGapDistribution, Student } from '@/types';
 
 // Priority → bar color mapping
 const PRIORITY_COLOR: Record<string, string> = {
@@ -36,7 +35,6 @@ const PRIORITY_COLOR: Record<string, string> = {
 const ACCENT_COLOR = '#6366f1';
 
 export default function PlacementAnalyticsPage() {
-  const [stats, setStats] = useState<PlacementStat[]>([]);
   const [rawStats, setRawStats] = useState<BackendPlacementStats | null>(null);
   const [skillGapDistribution, setSkillGapDistribution] = useState<SkillGapDistribution[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
@@ -53,11 +51,9 @@ export default function PlacementAnalyticsPage() {
           fetchAllStudents({ pageSize: 100 }), // API caps pageSize at 100
         ]);
 
-        const frontendStats = statsData ? mapBackendPlacementStatsToFrontend(statsData) : [];
         const frontendSkillGaps = skillGapsData ? mapBackendSkillGapsToFrontend(skillGapsData) : [];
         const frontendStudents = studentsData?.items.map(convertToFrontendStudent) || [];
 
-        setStats(frontendStats);
         setRawStats(statsData);
         setSkillGapDistribution(frontendSkillGaps);
         setStudents(frontendStudents);

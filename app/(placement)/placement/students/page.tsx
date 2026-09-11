@@ -7,12 +7,11 @@ import { GlassButton } from '@/components/ui/GlassButton';
 import { GlassBadge } from '@/components/ui/GlassBadge';
 import { SkillChip } from '@/components/product/SkillChip';
 import { SkeletonTableRow } from '@/components/ui/Skeleton';
-import { LoadingState, EmptyState, ErrorState } from '@/components/states';
+import { LoadingState, ErrorState } from '@/components/states';
 import {
   fetchAllStudents,
   convertToFrontendStudent,
 } from '@/services/placement-api';
-import type { BackendStudentList, BackendStudent } from '@/types/api';
 import type { Student } from '@/types';
 import { formatCgpa } from '@/lib/utils';
 

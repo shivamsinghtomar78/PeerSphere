@@ -27,8 +27,8 @@ import {
   type EvaluationOverride,
 } from '@/services/placement-api';
 import { mapBackendEvaluationToMatchResult } from '@/types/api';
-import type { BackendStudent, BackendJob, BackendEvaluation, BackendApplication } from '@/types/api';
-import type { Student, Job, Candidate, MatchResult } from '@/types';
+import type { BackendEvaluation } from '@/types/api';
+import type { Student, Job, MatchResult } from '@/types';
 import { formatCgpa } from '@/lib/utils';
 
 export default function CandidateDetailPage() {

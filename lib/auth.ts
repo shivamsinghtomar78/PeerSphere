@@ -76,7 +76,7 @@ export const refreshToken = async (): Promise<{ accessToken: string; refreshToke
     localStorage.setItem('peersphere_refresh_token', newRefreshToken);
 
     return { accessToken, refreshToken: newRefreshToken };
-  } catch (error) {
+  } catch {
     clearAuth();
     return null;
   }

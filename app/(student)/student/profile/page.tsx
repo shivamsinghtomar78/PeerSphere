@@ -11,7 +11,6 @@ import { useToast } from '@/components/ui/Toast';
 import { LoadingState, EmptyState, ErrorState } from '@/components/states';
 import {
   fetchMyProfile,
-  fetchMySkills,
   addMySkill,
   removeMySkill,
   updateMyProfile,
@@ -20,7 +19,6 @@ import {
   downloadMyResume,
   convertToFrontendStudent,
 } from '@/services/student-api';
-import type { BackendStudent, BackendSkillEvidence } from '@/types/api';
 import type { Student, Skill } from '@/types';
 import { formatDate } from '@/lib/utils';
 

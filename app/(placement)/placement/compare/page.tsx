@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { GlassBadge, EligibilityBadge } from '@/components/ui/GlassBadge';
@@ -10,19 +9,16 @@ import { SkillChip } from '@/components/product/SkillChip';
 import { LoadingState, EmptyState, ErrorState } from '@/components/states';
 import {
   fetchAllJobs,
-  fetchAllStudents,
   fetchCandidatesForJob,
   convertToFrontendJob,
-  convertToFrontendStudent,
   getTopCandidates,
 } from '@/services/placement-api';
-import type { BackendJob, BackendStudent } from '@/types/api';
-import type { Job, Student, Candidate, Skill } from '@/types';
-import { formatCgpa, skillStatusSymbol } from '@/lib/utils';
+import type { BackendJob } from '@/types/api';
+import type { Candidate } from '@/types';
+import { formatCgpa } from '@/lib/utils';
 
 export default function CandidateComparisonPage() {
   const [jobs, setJobs] = useState<BackendJob[]>([]);
-  const [students, setStudents] = useState<Student[]>([]);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [selectedJobId, setSelectedJobId] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
@@ -30,23 +26,32 @@ export default function CandidateComparisonPage() {
 
   // Fetch data on mount
   useEffect(() => {
+    let cancelled = false;
+
     const fetchData = async () => {
       try {
-        const [jobsData, studentsData] = await Promise.all([
-          fetchAllJobs({ pageSize: 20, status: 'PUBLISHED' }),
-          fetchAllStudents({ pageSize: 50 }),
-        ]);
+        // The comparison grid is built entirely from candidates of the
+        // selected drive — the old fetchAllStudents call fed unused state.
+        const jobsData = await fetchAllJobs({ pageSize: 20, status: 'PUBLISHED' });
+        if (cancelled) return;
 
         const backendJobs = jobsData?.items || [];
-        const frontendStudents = studentsData?.items.map(convertToFrontendStudent) || [];
-
         setJobs(backendJobs);
-        setStudents(frontendStudents);
 
-        // Auto-select the first drive that actually has candidates (a freshly
-        // published drive has none and would dead-end the comparison view)
-        for (const backendJob of backendJobs.slice(0, 5)) {
+        // Honour the drive the officer came from (?jobId= on the ranking's
+        // Compare button); otherwise probe for the first drive that actually
+        // has candidates (a freshly published drive has none and would
+        // dead-end the comparison view).
+        const requestedJobId = new URLSearchParams(window.location.search).get('jobId');
+        const probeOrder = backendJobs.some((j) => j.jobId === requestedJobId)
+          ? [
+              ...backendJobs.filter((j) => j.jobId === requestedJobId),
+              ...backendJobs.filter((j) => j.jobId !== requestedJobId).slice(0, 4),
+            ]
+          : backendJobs.slice(0, 5);
+        for (const backendJob of probeOrder) {
           const candidatesData = await fetchCandidatesForJob(backendJob.jobId);
+          if (cancelled) return;
           if (candidatesData.length > 0) {
             setSelectedJobId(backendJob.jobId);
             setCandidates(getTopCandidates(candidatesData, 3));
@@ -56,12 +61,16 @@ export default function CandidateComparisonPage() {
 
         setIsLoading(false);
       } catch (err) {
+        if (cancelled) return;
         setError(err instanceof Error ? err.message : 'Failed to load comparison data');
         setIsLoading(false);
       }
     };
 
     fetchData();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   if (isLoading) {

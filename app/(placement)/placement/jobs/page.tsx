@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { GlassBadge } from '@/components/ui/GlassBadge';
@@ -9,7 +8,7 @@ import { GlassInput } from '@/components/ui/GlassInput';
 import { GlassDialog } from '@/components/ui/GlassDialog';
 import { ClayButton } from '@/components/ui/ClayButton';
 import { SkillChip } from '@/components/product/SkillChip';
-import { LoadingState, EmptyState, ErrorState } from '@/components/states';
+import { LoadingState, ErrorState } from '@/components/states';
 import {
   fetchAllJobs,
   createJob,
@@ -17,12 +16,10 @@ import {
   closeJob,
   convertToFrontendJob,
 } from '@/services/placement-api';
-import { fetchJobs } from '@/services/student-api';
+import type { CreateJobPayload } from '@/types/api';
 import { formatDate } from '@/lib/utils';
 import { useToast } from '@/components/ui/Toast';
 import type { Job } from '@/types';
-import type { BackendJob } from '@/types/api';
-
 export default function PlacementJobsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -108,8 +105,8 @@ export default function PlacementJobsPage() {
         title: formData.title,
         company: formData.company,
         location: formData.location || 'Bengaluru, Karnataka',
-        workMode: formData.workMode.toUpperCase(),
-        jobType: formData.jobType.toUpperCase().replace('-', '_'),
+        workMode: formData.workMode.toUpperCase() as CreateJobPayload['workMode'],
+        jobType: formData.jobType.toUpperCase().replace('-', '_') as CreateJobPayload['jobType'],
         salary: formData.salary || '₹10–16 LPA',
         minCgpa: parseFloat(formData.minCgpa) || 7.0,
         maxBacklogs: parseInt(formData.maxBacklogs) || 0,

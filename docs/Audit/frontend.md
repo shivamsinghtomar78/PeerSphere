@@ -7,6 +7,24 @@ Scope: `app/(student)/**`, `app/(placement)/**`, `app/auth/**`,
 Already-fixed issues from `BUGFIX-TASKS.md` (10 bugs, all `[x]`) are not
 re-listed here.
 
+> **Follow-up executed (2026-09-12).** Finding 1 verified in place
+> (`ThemeSwitcher.tsx`, committed `d352e83`); Finding 2 re-confirmed and kept
+> as documented. Fresh-pass fixes: compare page now honours `?jobId=` from the
+> ranking (it silently selected the first drive with candidates) and dropped a
+> dead `fetchAllStudents` call; stale-response guards added to the drive-switch
+> and job-detail fetch effects; the theme provider now exposes a `hydrated`
+> flag (single hydration guard for all consumers) and reads localStorage
+> lazily; the login redirect no longer sits behind a `setTimeout`. The student
+> dashboard's hand-rolled MatchResult (empty skill arrays — Bug 1's pattern)
+> now uses the shared mapper. Scope-to-improve items executed: lint cleanup
+> (ESLint no longer scans the bundled `.pgsql/**`; unused imports removed —
+> 106 warnings → 1, the intentional `location.assign` note below), the API
+> wrapper seam is fully typed (no `any` left in `services/*`, `types/api.ts`,
+> `lib/services/*`, `prisma/seed.ts`), per-portal error boundaries added
+> (`app/(student)/error.tsx`, `app/(placement)/error.tsx`), and Playwright
+> visual regression baselines cover the landing page, student dashboard,
+> admin analytics, and the ranking matrix (`e2e/visual.spec.ts`).
+
 ---
 
 ## Findings

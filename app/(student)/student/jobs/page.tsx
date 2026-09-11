@@ -8,8 +8,6 @@ import { EmptyState } from '@/components/states';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { fetchJobs, fetchMyApplications, applyToJob, convertToFrontendJob, convertToFrontendApplication } from '@/services/student-api';
 import type { Job, Application, MatchResult } from '@/types';
-import type { BackendJob, BackendApplication } from '@/types/api';
-
 export default function StudentJobsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('all');

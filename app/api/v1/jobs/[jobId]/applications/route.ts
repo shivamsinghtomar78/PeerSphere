@@ -1,18 +1,14 @@
 import { NextRequest } from 'next/server';
-import { z } from 'zod';
 import { getAuthUser } from '@/lib/auth/request';
 import * as applicationsService from '@/lib/services/applications.service';
 import * as jobsService from '@/lib/services/jobs.service';
 import {
   successResponse,
-  badRequestError,
   unauthorizedError,
   forbiddenError,
   notFoundError,
   internalError,
 } from '@/lib/api/response';
-import { ApiError } from '@/lib/errors/api-error';
-
 // ─── GET /jobs/:jobId/applications ───────────────────────────────────────────
 // List applications for a specific job (admin or assigned evaluator only)
 

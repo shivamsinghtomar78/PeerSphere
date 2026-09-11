@@ -7,6 +7,8 @@
 import { apiClient, getErrorMessage } from '@/lib/api-client';
 import {
   BackendStudent,
+  BackendSkillEvidence,
+  BackendResumeVersion,
   BackendJob,
   BackendJobDetail,
   BackendJobList,
@@ -62,7 +64,7 @@ export async function updateMyProfile(data: { name?: string }): Promise<BackendS
  */
 export async function fetchMySkills() {
   try {
-    const response = await apiClient.get<{ success: boolean; data: any[] }>('/students/me/skills');
+    const response = await apiClient.get<{ success: boolean; data: BackendSkillEvidence[] }>('/students/me/skills');
     return response.data.data;
   } catch (error) {
     throw new Error(getErrorMessage(error));
@@ -75,7 +77,7 @@ export async function fetchMySkills() {
  */
 export async function addMySkill(skillName: string) {
   try {
-    const response = await apiClient.post<{ success: boolean; data: any }>('/students/me/skills', {
+    const response = await apiClient.post<{ success: boolean; data: BackendSkillEvidence }>('/students/me/skills', {
       skillName,
     });
     return response.data.data;
@@ -104,7 +106,7 @@ export async function removeMySkill(skillId: string): Promise<void> {
  */
 export async function fetchMyResumes() {
   try {
-    const response = await apiClient.get<{ success: boolean; data: any[] }>('/students/me/resumes');
+    const response = await apiClient.get<{ success: boolean; data: BackendResumeVersion[] }>('/students/me/resumes');
     return response.data.data;
   } catch (error) {
     throw new Error(getErrorMessage(error));
@@ -179,7 +181,7 @@ export async function fetchJobs(params?: JobQueryParams): Promise<BackendJobList
  */
 export async function fetchJobById(id: string) {
   try {
-    const response = await apiClient.get<{ success: boolean; data: any }>(`/jobs/${id}`);
+    const response = await apiClient.get<{ success: boolean; data: BackendJobDetail }>(`/jobs/${id}`);
     return response.data.data;
   } catch (error) {
     throw new Error(getErrorMessage(error));

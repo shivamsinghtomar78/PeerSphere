@@ -112,6 +112,48 @@ export interface BackendStudentList {
 }
 
 /** Skill evidence from backend */
+/** The application.student payload fetchCandidatesForJob composes from */
+export interface CandidateStudentPayload {
+  name?: string;
+  email?: string;
+  rollNumber?: string;
+  department?: string;
+  program?: string;
+  year?: number;
+  cgpa?: number | string | null;
+  activeBacklogs?: number;
+  totalBacklogs?: number;
+  profileCompleteness?: number;
+  placementReadiness?: number;
+  skillEvidence?: Array<{
+    skillId: string;
+    confidence?: number;
+    skill?: { id: string; canonicalName: string; category: string };
+  }>;
+}
+
+/** Body for POST /jobs — mirrors the route's zod schema */
+export interface CreateJobPayload {
+  title: string;
+  company: string;
+  location: string;
+  workMode: 'ONSITE' | 'REMOTE' | 'HYBRID';
+  jobType: 'FULL_TIME' | 'INTERNSHIP' | 'CONTRACT';
+  salary?: string;
+  description: string;
+  /** ISO 8601 datetime */
+  deadline: string;
+  minCgpa?: number;
+  maxBacklogs: number;
+  allowedDepartments: string[];
+  allowedPrograms: string[];
+  requiredSkills?: string[];
+  preferredSkills?: string[];
+}
+
+/** Body for PATCH /jobs/:id — every field optional */
+export type UpdateJobPayload = Partial<CreateJobPayload>;
+
 export interface BackendSkillEvidence {
   id: string;
   studentId: string;
@@ -229,6 +271,27 @@ export interface BackendJobList {
 // ─── Applications ──────────────────────────────────────────────────────
 
 /** Application from backend */
+/**
+ * The trimmed evaluation the applications list embeds (no requirementMatches
+ * unless the caller fetched the full evaluation separately). Structurally a
+ * subset of BackendEvaluation so mapBackendEvaluationToMatchResult accepts both.
+ */
+export interface EvaluationSummary {
+  id: string;
+  studentId?: string;
+  eligibility: string;
+  status: string;
+  overallScore?: number;
+  confidenceScore?: number;
+  coveragePercent?: number;
+  matchSummary?: string;
+  algorithmVersion?: string;
+  requiresReview?: boolean;
+  reviewNote?: string;
+  createdAt?: string;
+  requirementMatches?: BackendRequirementMatch[];
+}
+
 export interface BackendApplication {
   id: string;
   studentId: string;
@@ -243,17 +306,7 @@ export interface BackendApplication {
     company: string;
     deadline?: string;
   };
-  latestEvaluation?: {
-    id: string;
-    eligibility: string;
-    status: string;
-    overallScore?: number;
-    confidenceScore?: number;
-    coveragePercent?: number;
-    matchSummary?: string;
-    requiresReview?: boolean;
-    createdAt?: string;
-  } | null;
+  latestEvaluation?: EvaluationSummary | null;
   student?: {
     id: string;
     name: string;
@@ -294,7 +347,7 @@ export interface BackendEvaluation {
   id: string;
   studentId: string;
   jobVersionId: string;
-  inputSnapshot: any;
+  inputSnapshot: unknown;
   snapshotHash: string;
   eligibility: string;
   status: string;
@@ -605,13 +658,15 @@ export const mapRequirementMatchesToSkills = (
 
 /** Map backend evaluation to frontend MatchResult type */
 export const mapBackendEvaluationToMatchResult = (
-  evalData: BackendEvaluation,
+  // Accepts the full evaluation or the trimmed summary embedded on
+  // applications — the summary simply yields empty skill arrays.
+  evalData: BackendEvaluation | EvaluationSummary,
   jobId: string
 ): MatchResult => {
   const breakdown = mapRequirementMatchesToSkills(evalData.requirementMatches);
   return {
     jobId,
-    studentId: evalData.studentId,
+    studentId: evalData.studentId ?? '',
     overallScore: evalData.overallScore || 0,
     confidenceScore: evalData.confidenceScore || 0,
     eligibilityStatus: (evalData.eligibility?.toLowerCase() as EligibilityStatus) || 'pending',
@@ -621,8 +676,8 @@ export const mapBackendEvaluationToMatchResult = (
     missingSkills: breakdown.missing,
     matchSummary: evalData.matchSummary || '',
     analysisVersion: evalData.algorithmVersion || '2.1.0',
-    generatedAt: evalData.createdAt,
-    requiresHumanReview: evalData.requiresReview,
+    generatedAt: evalData.createdAt ?? new Date().toISOString(),
+    requiresHumanReview: evalData.requiresReview ?? false,
     humanReviewNote: evalData.reviewNote,
   };
 };

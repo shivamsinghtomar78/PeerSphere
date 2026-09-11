@@ -52,7 +52,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           ...authState,
           isLoading: false,
         });
-      } catch (error) {
+      } catch {
         setState({
           user: null,
           isAuthenticated: false,
@@ -133,16 +133,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const { user } = await loginApi(email, password);
       dispatch({ type: 'LOGIN_SUCCESS', payload: user });
-      
-      // Redirect based on role after successful login
-      // Give a moment for state to update before redirecting
-      setTimeout(() => {
-        if (user.role === 'STUDENT') {
-          router.push('/student');
-        } else if (user.role === 'PLACEMENT_ADMIN') {
-          router.push('/placement');
-        }
-      }, 100);
+
+      // Redirect based on role. router.push is safe to call directly here —
+      // React batches the state update with the navigation; the old
+      // setTimeout(…, 100) only added a race with fast unmounts.
+      if (user.role === 'STUDENT') {
+        router.push('/student');
+      } else if (user.role === 'PLACEMENT_ADMIN') {
+        router.push('/placement');
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Login failed';
       dispatch({ type: 'LOGIN_FAILURE', payload: message });

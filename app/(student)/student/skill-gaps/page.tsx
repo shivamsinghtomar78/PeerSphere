@@ -11,7 +11,6 @@ import {
   fetchMyEvaluations,
   extractSkillGapsFromEvaluations,
 } from '@/services/student-api';
-import type { BackendEvaluation } from '@/types/api';
 import type { SkillGap } from '@/types';
 
 export default function SkillGapsPage() {

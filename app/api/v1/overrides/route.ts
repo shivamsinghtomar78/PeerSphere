@@ -5,12 +5,8 @@ import {
   successResponse,
   unauthorizedError,
   forbiddenError,
-  notFoundError,
-  badRequestError,
   internalError,
 } from '@/lib/api/response';
-import { ApiError } from '@/lib/errors/api-error';
-
 // ─── GET /overrides ────────────────────────────────────────────────────────────
 // List all overrides with optional filtering
 

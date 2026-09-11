@@ -12,11 +12,12 @@ import {
   generateReport,
   downloadReportCsv,
   type GeneratedReport,
+  type ReportCatalogItem,
 } from '@/services/placement-api';
 import { formatDate } from '@/lib/utils';
 
 export default function PlacementReportsPage() {
-  const [reports, setReports] = useState<any[]>([]);
+  const [reports, setReports] = useState<ReportCatalogItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
@@ -81,14 +82,8 @@ export default function PlacementReportsPage() {
     );
   }
 
-  // Format reports data for display
-  const formattedReports = reports.map((report: any) => ({
-    id: report.id || `${report.title || report.name || 'report'}-${report.generatedAt || report.createdAt || ''}`,
-    title: report.title || report.name || 'Untitled Report',
-    category: report.category || report.type || 'General',
-    description: report.description || '',
-    generatedDate: report.generatedAt || report.createdAt || 'Unknown',
-  }));
+  // Catalog rows come from a fixed API shape — no defensive re-mapping needed
+  const formattedReports = reports;
 
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-6xl mx-auto">

@@ -15,7 +15,6 @@ import {
   convertToFrontendJob,
   convertToFrontendStudent,
 } from '@/services/placement-api';
-import type { BackendApplicationList, BackendJobList, BackendStudentList } from '@/types/api';
 import type { Application, Job, Student } from '@/types';
 import { formatDate, applicationStatusLabel } from '@/lib/utils';
 
@@ -23,7 +22,6 @@ export default function PlacementApplicationsPage() {
   const [applications, setApplications] = useState<Application[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
-  const [selectedStatus, setSelectedStatus] = useState('all');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -145,7 +143,7 @@ export default function PlacementApplicationsPage() {
                     </td>
 
                     <td className="py-3 px-4">
-                      <GlassBadge variant={statusBadge as any} size="sm" dot>
+                      <GlassBadge variant={statusBadge} size="sm" dot>
                         {applicationStatusLabel(app.status)}
                       </GlassBadge>
                     </td>

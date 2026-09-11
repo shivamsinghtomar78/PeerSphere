@@ -16,17 +16,6 @@ import {
 
 // ─── Validation schemas ───────────────────────────────────────────────────────
 
-const updateStatusSchema = z.object({
-  status: z.string().min(1),
-  notes: z.string().optional(),
-});
-
-const listJobApplicationsQuerySchema = z.object({
-  status: z.string().optional(),
-  page: z.coerce.number().int().min(1).optional(),
-  pageSize: z.coerce.number().int().min(1).max(100).optional(),
-});
-
 const listAllApplicationsQuerySchema = z.object({
   status: z.string().optional(),
   page: z.coerce.number().int().min(1).optional(),

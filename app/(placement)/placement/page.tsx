@@ -7,7 +7,6 @@ import { GlassButton } from '@/components/ui/GlassButton';
 import { GlassBadge } from '@/components/ui/GlassBadge';
 import { StatCard } from '@/components/product/StatCard';
 import { MatchScore } from '@/components/product/MatchScore';
-import { SkillChip } from '@/components/product/SkillChip';
 import { HumanReviewBanner } from '@/components/product/HumanReviewBanner';
 import { Skeleton } from '@/components/ui/Skeleton';
 import {
@@ -17,7 +16,6 @@ import {
   mapBackendSkillGapsToFrontend,
   convertToFrontendJob,
 } from '@/services/placement-api';
-import { fetchJobs } from '@/services/student-api';
 import { formatCgpa } from '@/lib/utils';
 import type { Job, Candidate, PlacementStat, SkillGapDistribution } from '@/types';
 

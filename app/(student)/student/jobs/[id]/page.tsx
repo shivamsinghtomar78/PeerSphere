@@ -41,6 +41,8 @@ export default function JobDetailPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let stale = false;
+
     const fetchData = async () => {
       if (!jobId) return;
 
@@ -54,6 +56,7 @@ export default function JobDetailPage() {
           fetchMyApplications({ pageSize: 50 }),
           fetchMyEvaluations(),
         ]);
+        if (stale) return;
 
         const frontendJob = convertToFrontendJobDetail(jobResult);
         const frontendStudent = convertToFrontendStudent(profileResult);
@@ -65,12 +68,16 @@ export default function JobDetailPage() {
         setEvaluations(evalsResult?.items || []);
         setIsLoading(false);
       } catch (err) {
+        if (stale) return;
         setError(err instanceof Error ? err.message : 'Failed to load job details');
         setIsLoading(false);
       }
     };
 
     fetchData();
+    return () => {
+      stale = true;
+    };
   }, [jobId]);
 
   const applied = applications.some((a) => a.jobId === jobId);

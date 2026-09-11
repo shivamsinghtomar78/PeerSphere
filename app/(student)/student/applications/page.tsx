@@ -138,7 +138,7 @@ export default function StudentApplicationsPage() {
                       </div>
                     )}
 
-                    <GlassBadge variant={statusBadge as any} size="md" dot>
+                    <GlassBadge variant={statusBadge} size="md" dot>
                       {applicationStatusLabel(app.status)}
                     </GlassBadge>
                   </div>

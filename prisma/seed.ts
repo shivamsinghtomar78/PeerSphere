@@ -6,7 +6,7 @@
  * Run: npx ts-node prisma/seed.ts
  */
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma, WorkMode, JobType, RequirementType } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { computeMatch, StudentSkillInput, JobSkillRequirement } from '../lib/engines/matching.engine';
@@ -252,7 +252,7 @@ async function main() {
           create: {
             version: 1,
             title: jd.title, company: jd.company, location: jd.location,
-            workMode: jd.workMode as any, jobType: jd.jobType as any,
+            workMode: jd.workMode as WorkMode, jobType: jd.jobType as JobType,
             salary: jd.salary, description: jd.description, deadline: jd.deadline,
             minCgpa: jd.minCgpa, maxBacklogs: jd.maxBacklogs,
             allowedDepartments: jd.allowedDepartments,
@@ -261,14 +261,14 @@ async function main() {
             requirements: {
               create: [
                 ...jd.requiredSkills.map((name) => ({
-                  type: 'SOFT' as any,
+                  type: 'SOFT' as RequirementType,
                   skillId: skills[name] ?? null,
                   weight: 1.5,
                   required: true,
                   label: name,
                 })),
                 ...jd.preferredSkills.map((name) => ({
-                  type: 'SOFT' as any,
+                  type: 'SOFT' as RequirementType,
                   skillId: skills[name] ?? null,
                   weight: 0.5,
                   required: false,
@@ -390,7 +390,7 @@ async function main() {
       data: {
         studentId,
         jobVersionId,
-        inputSnapshot: inputSnapshot as any,
+        inputSnapshot: inputSnapshot as unknown as Prisma.InputJsonValue,
         snapshotHash,
         status: requiresReview ? 'REVIEW_REQUIRED' : 'COMPLETED',
         eligibility: eligResult.status,

@@ -9,7 +9,6 @@ import { LoadingState, EmptyState, ErrorState } from '@/components/states';
 import {
   fetchMyEvaluations,
   fetchMyProfile,
-  extractSkillGapsFromEvaluations,
   convertToFrontendStudent,
 } from '@/services/student-api';
 import type { BackendEvaluation } from '@/types/api';

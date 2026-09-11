@@ -17,6 +17,9 @@ import {
   BackendEvaluationList,
   BackendPlacementStats,
   BackendSkillGaps,
+  CandidateStudentPayload,
+  CreateJobPayload,
+  UpdateJobPayload,
   mapBackendJobToFrontend,
   mapBackendJobDetailToFrontend,
   mapBackendStudentToFrontend,
@@ -120,7 +123,7 @@ export async function fetchEvaluationOverrides(evaluationId: string): Promise<Ev
  * Create a new job
  * POST /api/v1/jobs
  */
-export async function createJob(data: any): Promise<BackendJob> {
+export async function createJob(data: CreateJobPayload): Promise<BackendJob> {
   try {
     const response = await apiClient.post<{ success: boolean; data: BackendJob }>('/jobs', data);
     return response.data.data;
@@ -133,7 +136,7 @@ export async function createJob(data: any): Promise<BackendJob> {
  * Update a job
  * PATCH /api/v1/jobs/:id
  */
-export async function updateJob(id: string, data: any): Promise<BackendJob> {
+export async function updateJob(id: string, data: UpdateJobPayload): Promise<BackendJob> {
   try {
     const response = await apiClient.patch<{ success: boolean; data: BackendJob }>(`/jobs/${id}`, data);
     return response.data.data;
@@ -325,9 +328,25 @@ export async function fetchSkillGapsAnalysis(): Promise<BackendSkillGaps> {
  * Fetch available reports (PLACEMENT_ADMIN only)
  * GET /api/v1/reports
  */
-export async function fetchReports(params?: ListQueryParams) {
+/** Catalog row from GET /reports */
+export interface ReportCatalogItem {
+  id: string;
+  title: string;
+  category: string;
+  description: string;
+  generatedAt: string;
+  format: string;
+  status: string;
+}
+
+export async function fetchReports(
+  params?: ListQueryParams
+): Promise<{ items: ReportCatalogItem[]; total: number; page: number; pageSize: number; hasNext: boolean }> {
   try {
-    const response = await apiClient.get('/reports', { params });
+    const response = await apiClient.get<{
+      success: boolean;
+      data: { items: ReportCatalogItem[]; total: number; page: number; pageSize: number; hasNext: boolean };
+    }>('/reports', { params });
     return response.data.data;
   } catch (error) {
     throw new Error(getErrorMessage(error));
@@ -449,9 +468,9 @@ export async function fetchCandidatesForJob(jobId: string): Promise<Candidate[]>
     const candidates: Candidate[] = applications.items
       .filter((app) => app.student)
       .map((app) => {
-        const studentData = app.student as any;
+        const studentData = (app.student ?? {}) as CandidateStudentPayload;
         const evalData =
-          evalByStudentId.get(app.studentId) ?? (app.latestEvaluation as any) ?? null;
+          evalByStudentId.get(app.studentId) ?? app.latestEvaluation ?? null;
 
         const student: Student = {
           id: app.studentId,
@@ -464,7 +483,7 @@ export async function fetchCandidatesForJob(jobId: string): Promise<Candidate[]>
           cgpa: studentData.cgpa != null ? Number(studentData.cgpa) : 0,
           activeBacklogs: studentData.activeBacklogs ?? 0,
           totalBacklogs: studentData.totalBacklogs ?? 0,
-          skills: studentData.skillEvidence?.map((se: any) => ({
+          skills: (studentData.skillEvidence ?? []).map((se) => ({
             id: se.skill?.id ?? se.skillId,
             name: se.skill?.canonicalName ?? 'Unknown',
             category: se.skill?.category ?? 'Unknown',

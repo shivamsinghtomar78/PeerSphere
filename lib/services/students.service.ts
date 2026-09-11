@@ -1,5 +1,23 @@
 import { prisma } from '@/lib/db/prisma';
 import { ApiError } from '@/lib/errors/api-error';
+import { Prisma } from '@prisma/client';
+
+// The exact shape listStudents returns (student + email + evidence + newest resume)
+const studentListInclude = {
+  user: { select: { email: true } },
+  skillEvidence: {
+    include: {
+      skill: { select: { id: true, canonicalName: true, category: true } },
+    },
+  },
+  resumeVersions: {
+    where: { deletedAt: null },
+    orderBy: { createdAt: 'desc' },
+    take: 1,
+  },
+} satisfies Prisma.StudentInclude;
+
+export type StudentListItem = Prisma.StudentGetPayload<{ include: typeof studentListInclude }>;
 
 // ─── Helpers ─────────────────────────────────────────────────────
 
@@ -230,7 +248,7 @@ export interface ListStudentsParams {
 }
 
 export interface PaginatedStudents {
-  items: any[];
+  items: StudentListItem[];
   total: number;
   page: number;
   pageSize: number;
@@ -276,7 +294,7 @@ export async function listStudents(params: ListStudentsParams): Promise<Paginate
   const { page = 1, pageSize = 20, search, department } = params;
   const skip = (page - 1) * pageSize;
 
-  const where: any = {};
+  const where: Prisma.StudentWhereInput = {};
   
   if (department) {
     where.department = { contains: department, mode: 'insensitive' };
@@ -293,23 +311,7 @@ export async function listStudents(params: ListStudentsParams): Promise<Paginate
   const [items, total] = await Promise.all([
     prisma.student.findMany({
       where,
-      include: {
-        user: {
-          select: { email: true },
-        },
-        skillEvidence: {
-          include: {
-            skill: {
-              select: { id: true, canonicalName: true, category: true },
-            },
-          },
-        },
-        resumeVersions: {
-          where: { deletedAt: null },
-          orderBy: { createdAt: 'desc' },
-          take: 1,
-        },
-      },
+      include: studentListInclude,
       orderBy: { name: 'asc' },
       skip,
       take: pageSize,

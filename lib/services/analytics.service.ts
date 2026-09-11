@@ -1,6 +1,4 @@
 import { prisma } from '@/lib/db/prisma';
-import { ApiError } from '@/lib/errors/api-error';
-
 export interface PlacementStats {
   totalStudents: number;
   activeJobs: number;

@@ -17,7 +17,7 @@ import {
   convertToFrontendJob,
 } from '@/services/placement-api';
 import type { BackendJob } from '@/types/api';
-import type { Candidate, Job } from '@/types';
+import type { Candidate } from '@/types';
 import { formatCgpa } from '@/lib/utils';
 
 export default function CandidateRankingPage() {
@@ -60,16 +60,21 @@ export default function CandidateRankingPage() {
     fetchData();
   }, []);
 
-  // Fetch candidates when selected job changes (including the initial selection)
+  // Fetch candidates when selected job changes (including the initial selection).
+  // The stale flag stops an out-of-order response from a quickly-abandoned
+  // drive selection overwriting the ranking of the drive now on screen.
   useEffect(() => {
     if (!selectedJobId) return;
+    let stale = false;
 
     const fetchCandidates = async () => {
       try {
         const candidatesData = await fetchCandidatesForJob(selectedJobId);
+        if (stale) return;
         setCandidates(candidatesData);
         setIsLoading(false);
       } catch (err) {
+        if (stale) return;
         const message = err instanceof Error ? err.message : 'Failed to load candidates for this job';
         setIsLoading(false);
         toast(message, 'error');
@@ -77,6 +82,9 @@ export default function CandidateRankingPage() {
     };
 
     fetchCandidates();
+    return () => {
+      stale = true;
+    };
   }, [selectedJobId, toast]);
 
   const handleShortlistToggle = async (studentId: string) => {
@@ -199,7 +207,11 @@ export default function CandidateRankingPage() {
           <GlassButton variant="secondary" size="md" onClick={handleExportCsv}>
             Export CSV
           </GlassButton>
-          <GlassButton href="/placement/compare" variant="primary" size="md">
+          <GlassButton
+            href={selectedJobId ? `/placement/compare?jobId=${selectedJobId}` : '/placement/compare'}
+            variant="primary"
+            size="md"
+          >
             Compare Top Candidates Matrix →
           </GlassButton>
         </div>
@@ -242,7 +254,7 @@ export default function CandidateRankingPage() {
             <select
               id="sort-select"
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
+              onChange={(e) => setSortBy(e.target.value as 'rank' | 'score' | 'cgpa')}
               className="h-10 px-3 py-2 rounded-sm border border-border bg-surface text-text text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ps-focus)]"
             >
               <option value="rank">AI Overall Rank</option>
