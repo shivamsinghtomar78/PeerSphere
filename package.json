@@ -4,6 +4,7 @@
   "private": true,
   "description": "PeerSphere - AI-powered campus placement matching system",
   "scripts": {
+    "postinstall": "prisma generate",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",

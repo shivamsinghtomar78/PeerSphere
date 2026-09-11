@@ -21,8 +21,13 @@ export function ThemeSwitcher({ compact = false }: ThemeSwitcherProps) {
 
   // The stored theme comes from localStorage, which the server can't see —
   // render the server default until mounted to avoid a hydration mismatch.
-  const [mounted, setMounted] = React.useState(false);
-  React.useEffect(() => setMounted(true), []);
+  // useSyncExternalStore (rather than a mount-flag state + effect) gives that
+  // signal without calling setState from inside an effect body.
+  const mounted = React.useSyncExternalStore(
+    () => () => {}, // value never changes after the initial client render
+    () => true, // client snapshot
+    () => false // server snapshot
+  );
   const theme: Theme = mounted ? storedTheme : 'system';
 
   if (compact) {

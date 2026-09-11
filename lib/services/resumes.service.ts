@@ -22,18 +22,35 @@ if (!fs.existsSync(/* turbopackIgnore: true */ UPLOAD_DIR)) {
 /**
  * Upload a new resume PDF for a student.
  */
+// PDF files start with "%PDF-" (0x25 0x50 0x44 0x46 0x2D). The client-supplied
+// mimetype/extension are just labels an attacker fully controls, so the actual
+// file bytes are the only trustworthy signal that this is really a PDF.
+const PDF_MAGIC_BYTES = Buffer.from('%PDF-', 'ascii');
+
+function isPdfContent(buffer: Buffer): boolean {
+  return buffer.length >= PDF_MAGIC_BYTES.length && buffer.subarray(0, 5).equals(PDF_MAGIC_BYTES);
+}
+
 export async function uploadResume(
   studentId: string,
   file: { buffer: Buffer; originalname: string; mimetype: string; size: number }
 ) {
-  // Validate file type
+  // Validate declared file type (fast, cheap rejection for the common case)
   if (file.mimetype !== 'application/pdf') {
     throw new ApiError(400, 'INVALID_FILE_TYPE', 'Only PDF files are accepted');
   }
 
-  // Validate file size
+  // Validate size before touching the buffer's contents
   if (file.size > MAX_FILE_SIZE_BYTES) {
     throw new ApiError(400, 'FILE_TOO_LARGE', `File size exceeds ${MAX_FILE_SIZE_MB}MB limit`);
+  }
+
+  // Validate actual content: mimetype/filename are attacker-controlled labels,
+  // not proof of content. Reject anything whose bytes don't start with the
+  // PDF signature so a renamed executable/script/HTML file can't be stored
+  // and later served back with a PDF Content-Type.
+  if (!isPdfContent(file.buffer)) {
+    throw new ApiError(400, 'INVALID_FILE_TYPE', 'File is not a valid PDF');
   }
 
   // Generate unique storage key

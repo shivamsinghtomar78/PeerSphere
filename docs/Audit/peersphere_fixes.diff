@@ -1,0 +1,76 @@
+diff --git a/components/layout/ThemeSwitcher.tsx b/components/layout/ThemeSwitcher.tsx
+index 12ca1ce..80e16c2 100644
+--- a/components/layout/ThemeSwitcher.tsx
++++ b/components/layout/ThemeSwitcher.tsx
+@@ -21,8 +21,13 @@ export function ThemeSwitcher({ compact = false }: ThemeSwitcherProps) {
+ 
+   // The stored theme comes from localStorage, which the server can't see —
+   // render the server default until mounted to avoid a hydration mismatch.
+-  const [mounted, setMounted] = React.useState(false);
+-  React.useEffect(() => setMounted(true), []);
++  // useSyncExternalStore (rather than a mount-flag state + effect) gives that
++  // signal without calling setState from inside an effect body.
++  const mounted = React.useSyncExternalStore(
++    () => () => {}, // value never changes after the initial client render
++    () => true, // client snapshot
++    () => false // server snapshot
++  );
+   const theme: Theme = mounted ? storedTheme : 'system';
+ 
+   if (compact) {
+diff --git a/lib/services/resumes.service.ts b/lib/services/resumes.service.ts
+index b4214c2..6968472 100644
+--- a/lib/services/resumes.service.ts
++++ b/lib/services/resumes.service.ts
+@@ -22,20 +22,37 @@ if (!fs.existsSync(/* turbopackIgnore: true */ UPLOAD_DIR)) {
+ /**
+  * Upload a new resume PDF for a student.
+  */
++// PDF files start with "%PDF-" (0x25 0x50 0x44 0x46 0x2D). The client-supplied
++// mimetype/extension are just labels an attacker fully controls, so the actual
++// file bytes are the only trustworthy signal that this is really a PDF.
++const PDF_MAGIC_BYTES = Buffer.from('%PDF-', 'ascii');
++
++function isPdfContent(buffer: Buffer): boolean {
++  return buffer.length >= PDF_MAGIC_BYTES.length && buffer.subarray(0, 5).equals(PDF_MAGIC_BYTES);
++}
++
+ export async function uploadResume(
+   studentId: string,
+   file: { buffer: Buffer; originalname: string; mimetype: string; size: number }
+ ) {
+-  // Validate file type
++  // Validate declared file type (fast, cheap rejection for the common case)
+   if (file.mimetype !== 'application/pdf') {
+     throw new ApiError(400, 'INVALID_FILE_TYPE', 'Only PDF files are accepted');
+   }
+ 
+-  // Validate file size
++  // Validate size before touching the buffer's contents
+   if (file.size > MAX_FILE_SIZE_BYTES) {
+     throw new ApiError(400, 'FILE_TOO_LARGE', `File size exceeds ${MAX_FILE_SIZE_MB}MB limit`);
+   }
+ 
++  // Validate actual content: mimetype/filename are attacker-controlled labels,
++  // not proof of content. Reject anything whose bytes don't start with the
++  // PDF signature so a renamed executable/script/HTML file can't be stored
++  // and later served back with a PDF Content-Type.
++  if (!isPdfContent(file.buffer)) {
++    throw new ApiError(400, 'INVALID_FILE_TYPE', 'File is not a valid PDF');
++  }
++
+   // Generate unique storage key
+   const ext = path.extname(file.originalname) || '.pdf';
+   const basename = crypto.randomBytes(16).toString('hex');
+diff --git a/package.json b/package.json
+index 8512ab5..74dbbe4 100644
+--- a/package.json
++++ b/package.json
+@@ -4,6 +4,7 @@
+   "private": true,
+   "description": "PeerSphere - AI-powered campus placement matching system",
+   "scripts": {
++    "postinstall": "prisma generate",
+     "dev": "next dev",
+     "build": "next build",
+     "start": "next start",
