@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { getAuthUser } from '@/middleware';
+import { getAuthUser } from '@/lib/auth/request';
 import * as applicationsService from '@/lib/services/applications.service';
 import * as jobsService from '@/lib/services/jobs.service';
 import {
@@ -51,7 +51,7 @@ export async function GET(
     });
 
     return successResponse(applications);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[JOBS_APPLICATIONS_GET_ERROR]', error);
     return internalError();
   }

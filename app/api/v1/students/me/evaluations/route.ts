@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { getAuthUser } from '@/middleware';
+import { getAuthUser } from '@/lib/auth/request';
 import * as studentsService from '@/lib/services/students.service';
 import * as evaluationsService from '@/lib/services/evaluations.service';
 import {
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
 
     const evaluations = await evaluationsService.listStudentEvaluations(student.id);
     return successResponse(evaluations);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[STUDENTS_ME_EVALUATIONS_ERROR]', error);
     return internalError();
   }

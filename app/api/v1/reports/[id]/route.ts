@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { getAuthUser } from '@/middleware';
+import { getAuthUser } from '@/lib/auth/request';
 import * as analyticsService from '@/lib/services/analytics.service';
 import {
   successResponse,
@@ -33,7 +33,7 @@ export async function GET(
     if (!report) return notFoundError('Report');
 
     return successResponse(report);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[REPORT_GENERATE_ERROR]', error);
     return internalError();
   }

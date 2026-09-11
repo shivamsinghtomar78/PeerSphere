@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { getAuthUser } from '@/middleware';
+import { getAuthUser } from '@/lib/auth/request';
 import * as overridesService from '@/lib/services/overrides.service';
 import {
   successResponse,
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
     });
 
     return successResponse(result);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[OVERRIDES_GET_ERROR]', error);
     return internalError();
   }

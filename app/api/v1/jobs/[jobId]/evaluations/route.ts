@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { getAuthUser } from '@/middleware';
+import { getAuthUser } from '@/lib/auth/request';
 import * as evaluationsService from '@/lib/services/evaluations.service';
 import * as jobsService from '@/lib/services/jobs.service';
 import {
@@ -9,7 +9,7 @@ import {
   notFoundError,
   internalError,
 } from '@/lib/api/response';
-import { ApiError } from '@/lib/errors/api-error';
+import { isApiError } from '@/lib/errors/api-error';
 
 // ─── GET /jobs/:jobId/evaluations ───────────────────────────────────────────
 // List evaluations for a specific job
@@ -49,8 +49,8 @@ export async function GET(
     });
 
     return successResponse(evaluations);
-  } catch (error: any) {
-    if (error instanceof ApiError && error.statusCode === 404) {
+  } catch (error: unknown) {
+    if (isApiError(error) && error.statusCode === 404) {
       return notFoundError('Job');
     }
     console.error('[JOBS_EVALUATIONS_GET_ERROR]', error);

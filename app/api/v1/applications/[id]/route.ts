@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { getAuthUser } from '@/middleware';
+import { getAuthUser } from '@/lib/auth/request';
 import * as applicationsService from '@/lib/services/applications.service';
 import { STUDENT_ALLOWED_TARGET_STATUSES } from '@/lib/services/applications.service';
 import {
@@ -12,7 +12,7 @@ import {
   conflictError,
   internalError,
 } from '@/lib/api/response';
-import { ApiError } from '@/lib/errors/api-error';
+import { isApiError } from '@/lib/errors/api-error';
 
 // Ownership: Application.studentId is the Student row id; the authenticated
 // principal is a User id — always compare via student.userId.
@@ -41,8 +41,8 @@ export async function GET(
     }
 
     return successResponse(application);
-  } catch (error: any) {
-    if (error instanceof ApiError && error.statusCode === 404) {
+  } catch (error: unknown) {
+    if (isApiError(error) && error.statusCode === 404) {
       return notFoundError('Application');
     }
     console.error('[APPLICATIONS_GET_BY_ID_ERROR]', error);
@@ -119,8 +119,8 @@ export async function PATCH(
     }
 
     return badRequestError('Nothing to update — provide status and/or notes');
-  } catch (error: any) {
-    if (error instanceof ApiError) {
+  } catch (error: unknown) {
+    if (isApiError(error)) {
       if (error.statusCode === 404) return notFoundError('Application');
       if (error.statusCode === 400) return badRequestError(error.message);
       if (error.statusCode === 409) return conflictError(error.message);
@@ -151,8 +151,8 @@ export async function DELETE(
 
     await applicationsService.deleteApplication(id);
     return successResponse({ message: 'Application deleted successfully' });
-  } catch (error: any) {
-    if (error instanceof ApiError && error.statusCode === 404) {
+  } catch (error: unknown) {
+    if (isApiError(error) && error.statusCode === 404) {
       return notFoundError('Application');
     }
     console.error('[APPLICATIONS_DELETE_ERROR]', error);

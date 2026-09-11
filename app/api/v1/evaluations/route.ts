@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
+import { isApiError } from '@/lib/errors/api-error';
 import { z } from 'zod';
-import { getAuthUser } from '@/middleware';
+import { getAuthUser } from '@/lib/auth/request';
 import * as studentsService from '@/lib/services/students.service';
 import * as evaluationsService from '@/lib/services/evaluations.service';
 import {
@@ -41,7 +42,7 @@ export async function GET(request: NextRequest) {
     );
     const evaluations = await evaluationsService.listAllEvaluations(query);
     return successResponse(evaluations);
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error instanceof z.ZodError) {
       return badRequestError('Validation failed', error.flatten().fieldErrors);
     }
@@ -91,11 +92,11 @@ export async function POST(request: NextRequest) {
 
     const evaluation = await evaluationsService.queueEvaluation(studentId, jobId);
     return successResponse(evaluation, undefined, 201);
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error instanceof z.ZodError) {
       return badRequestError('Validation failed', error.flatten().fieldErrors);
     }
-    if (error.statusCode === 404) {
+    if (isApiError(error) && error.statusCode === 404) {
       return notFoundError(error.message);
     }
     console.error('[EVALUATIONS_POST_ERROR]', error);

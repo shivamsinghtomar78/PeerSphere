@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { getAuthUser } from '@/middleware';
+import { getAuthUser } from '@/lib/auth/request';
 import * as analyticsService from '@/lib/services/analytics.service';
 import {
   successResponse,
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
 
     const data = await analyticsService.getPlacementStats();
     return successResponse(data);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[ANALYTICS_PLACEMENT_STATS_ERROR]', error);
     return internalError();
   }

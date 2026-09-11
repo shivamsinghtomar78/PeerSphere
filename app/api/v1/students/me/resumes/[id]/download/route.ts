@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
+import { isApiError } from '@/lib/errors/api-error';
 import { NextResponse } from 'next/server';
-import { getAuthUser } from '@/middleware';
+import { getAuthUser } from '@/lib/auth/request';
 import * as studentsService from '@/lib/services/students.service';
 import * as resumesService from '@/lib/services/resumes.service';
 import {
@@ -67,8 +68,8 @@ export async function GET(
     });
 
     return response;
-  } catch (error: any) {
-    if (error.statusCode === 404) {
+  } catch (error: unknown) {
+    if (isApiError(error) && error.statusCode === 404) {
       return notFoundError(error.message);
     }
     console.error('[RESUMES_DOWNLOAD_ERROR]', error);

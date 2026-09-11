@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { getAuthUser } from '@/middleware';
+import { getAuthUser } from '@/lib/auth/request';
 import * as studentsService from '@/lib/services/students.service';
 import {
   successResponse,
@@ -11,7 +11,7 @@ import {
   conflictError,
   internalError,
 } from '@/lib/api/response';
-import { ApiError } from '@/lib/errors/api-error';
+import { isApiError } from '@/lib/errors/api-error';
 
 const addSkillSchema = z.object({
   skillName: z.string().trim().min(1, 'Skill name cannot be empty').max(255),
@@ -29,8 +29,8 @@ export async function GET(request: NextRequest) {
     const student = await studentsService.getStudentByUserId(user.userId);
     const skills = await studentsService.listSkills(student.id);
     return successResponse(skills);
-  } catch (error: any) {
-    if (error instanceof ApiError && error.statusCode === 404) {
+  } catch (error: unknown) {
+    if (isApiError(error) && error.statusCode === 404) {
       return notFoundError('Student profile');
     }
     console.error('[STUDENTS_ME_SKILLS_GET_ERROR]', error);
@@ -56,8 +56,8 @@ export async function POST(request: NextRequest) {
     const student = await studentsService.getStudentByUserId(user.userId);
     const evidence = await studentsService.addSkill(student.id, parsed.data.skillName);
     return successResponse(evidence);
-  } catch (error: any) {
-    if (error instanceof ApiError) {
+  } catch (error: unknown) {
+    if (isApiError(error)) {
       if (error.statusCode === 400) return badRequestError(error.message);
       if (error.statusCode === 404) return notFoundError('Student profile');
       if (error.statusCode === 409) return conflictError(error.message);

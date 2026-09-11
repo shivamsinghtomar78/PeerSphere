@@ -40,3 +40,21 @@ export class ApiError extends Error {
     return new ApiError(500, 'INTERNAL_ERROR', message);
   }
 }
+
+/**
+ * Type guard for catch blocks: lets route handlers distinguish an expected
+ * ApiError (map statusCode → response) from an unexpected crash without
+ * `catch (error: any)`. instanceof plus a structural fallback, so errors
+ * still match across module duplication (e.g. two copies of this file in
+ * a bundled route vs. a service chunk).
+ */
+export function isApiError(error: unknown): error is ApiError {
+  if (error instanceof ApiError) return true;
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    (error as { name?: unknown }).name === 'ApiError' &&
+    typeof (error as { statusCode?: unknown }).statusCode === 'number' &&
+    typeof (error as { code?: unknown }).code === 'string'
+  );
+}

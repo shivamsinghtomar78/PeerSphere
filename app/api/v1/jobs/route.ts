@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { getAuthUser } from '@/middleware';
+import { getAuthUser } from '@/lib/auth/request';
 import * as jobsService from '@/lib/services/jobs.service';
 import {
   successResponse,
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
     // is pinned to PUBLISHED inside the service.
     const data = await jobsService.listJobs(query, { allStatusesByDefault: isAdmin });
     return successResponse(data);
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error instanceof z.ZodError) {
       return badRequestError('Validation failed', error.flatten().fieldErrors);
     }
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
     const dto = createJobSchema.parse(await request.json());
     const data = await jobsService.createJob(user.userId, dto);
     return successResponse(data);
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error instanceof z.ZodError) {
       return badRequestError('Validation failed', error.flatten().fieldErrors);
     }

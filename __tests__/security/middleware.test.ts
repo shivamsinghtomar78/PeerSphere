@@ -4,7 +4,7 @@
  * must never reach a handler with those headers intact.
  */
 import { NextRequest } from 'next/server';
-import { middleware } from '@/middleware';
+import { proxy as middleware } from '@/proxy';
 
 const SECRET = process.env.JWT_SECRET!;
 

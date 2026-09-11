@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
-import { getAuthUser } from '@/middleware';
+import { isApiError } from '@/lib/errors/api-error';
+import { getAuthUser } from '@/lib/auth/request';
 import * as studentsService from '@/lib/services/students.service';
 import * as resumesService from '@/lib/services/resumes.service';
 import {
@@ -30,7 +31,7 @@ export async function GET(request: NextRequest) {
 
     const resumes = await resumesService.listResumes(student.id);
     return successResponse(resumes);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[RESUMES_GET_ERROR]', error);
     return internalError();
   }
@@ -85,12 +86,10 @@ export async function POST(request: NextRequest) {
     });
 
     return successResponse(record, undefined, 201);
-  } catch (error: any) {
-    if (error.statusCode === 400) {
-      return badRequestError(error.message);
-    }
-    if (error.statusCode === 404) {
-      return notFoundError(error.message);
+  } catch (error: unknown) {
+    if (isApiError(error)) {
+      if (error.statusCode === 400) return badRequestError(error.message);
+      if (error.statusCode === 404) return notFoundError(error.message);
     }
     console.error('[RESUMES_POST_ERROR]', error);
     return internalError();

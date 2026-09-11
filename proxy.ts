@@ -1,8 +1,11 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { verifyToken, TokenPayload } from '@/lib/auth/jwt';
+import { verifyToken } from '@/lib/auth/jwt';
 import { getJwtSecret } from '@/lib/auth/env';
+import type { AuthPayload } from '@/lib/auth/request';
 
-export type AuthPayload = TokenPayload;
+// Next 16 renamed the `middleware` file convention to `proxy` — same runtime,
+// same matcher semantics (this file replaces the deprecated middleware.ts).
+// Route handlers read the verified identity via getAuthUser (lib/auth/request).
 
 // Public (route, method) pairs. Everything else under /api/v1/* requires a
 // valid token regardless of HTTP method. Paths match exactly — sub-routes of
@@ -25,7 +28,7 @@ const extractToken = (request: NextRequest): string | null => {
   return authHeader.slice(7);
 };
 
-// Middleware to authenticate requests
+// Authenticate a request from its Authorization header
 export const authenticate = (request: NextRequest): Promise<AuthPayload | null> => {
   const token = extractToken(request);
   if (!token) {
@@ -34,12 +37,12 @@ export const authenticate = (request: NextRequest): Promise<AuthPayload | null> 
   return verifyToken(token, getJwtSecret());
 };
 
-// Main middleware function
-export async function middleware(request: NextRequest) {
+// Main proxy function
+export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
   // SECURITY: x-user-id / x-user-role are trusted by API handlers (getAuthUser).
-  // They must only ever be set by this middleware from a verified token, so
+  // They must only ever be set by this proxy from a verified token, so
   // strip any client-supplied values on EVERY request — public routes included.
   const requestHeaders = new Headers(request.headers);
   requestHeaders.delete('x-user-id');
@@ -88,28 +91,7 @@ export async function middleware(request: NextRequest) {
   });
 }
 
-// Export for use in API routes
-export const getAuthUser = (request: NextRequest): AuthPayload | null => {
-  const userId = request.headers.get('x-user-id');
-  const userRole = request.headers.get('x-user-role');
-
-  if (!userId || !userRole) {
-    return null;
-  }
-
-  // Validate role
-  const validRoles: ('STUDENT' | 'PLACEMENT_ADMIN')[] = ['STUDENT', 'PLACEMENT_ADMIN'];
-  if (!validRoles.includes(userRole as 'STUDENT' | 'PLACEMENT_ADMIN')) {
-    return null;
-  }
-
-  return {
-    userId,
-    role: userRole as 'STUDENT' | 'PLACEMENT_ADMIN',
-  };
-};
-
-// Configuration for Next.js middleware
+// Configuration for the Next.js proxy
 export const config = {
   matcher: '/api/v1/:path*',
 };

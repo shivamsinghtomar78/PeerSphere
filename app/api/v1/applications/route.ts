@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
+import { isApiError } from '@/lib/errors/api-error';
 import { z } from 'zod';
-import { getAuthUser } from '@/middleware';
+import { getAuthUser } from '@/lib/auth/request';
 import * as studentsService from '@/lib/services/students.service';
 import * as applicationsService from '@/lib/services/applications.service';
 import {
@@ -80,15 +81,11 @@ export async function POST(request: NextRequest) {
       undefined,
       statusCode as 200 | 201
     );
-  } catch (error: any) {
-    if (error.statusCode === 400) {
-      return badRequestError(error.message);
-    }
-    if (error.statusCode === 404) {
-      return notFoundError(error.message);
-    }
-    if (error.statusCode === 422) {
-      return unprocessableError(error.message, error.details);
+  } catch (error: unknown) {
+    if (isApiError(error)) {
+      if (error.statusCode === 400) return badRequestError(error.message);
+      if (error.statusCode === 404) return notFoundError(error.message);
+      if (error.statusCode === 422) return unprocessableError(error.message, error.details);
     }
     console.error('[APPLICATIONS_POST_ERROR]', error);
     return internalError();
@@ -114,7 +111,7 @@ export async function GET(request: NextRequest) {
     );
     const result = await applicationsService.listAllApplications(query);
     return successResponse(result);
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error instanceof z.ZodError) {
       return badRequestError('Validation failed', error.flatten().fieldErrors);
     }

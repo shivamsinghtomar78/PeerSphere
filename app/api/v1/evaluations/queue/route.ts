@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
+import { isApiError } from '@/lib/errors/api-error';
 import { z } from 'zod';
-import { getAuthUser } from '@/middleware';
+import { getAuthUser } from '@/lib/auth/request';
 import * as studentsService from '@/lib/services/students.service';
 import * as evaluationsService from '@/lib/services/evaluations.service';
 import {
@@ -12,12 +13,10 @@ import {
   internalError,
 } from '@/lib/api/response';
 
-const queueBodySchema = z.object({
-  studentId: z.string().uuid().optional(),
-});
-
+// studentId is only meaningful for PLACEMENT_ADMIN (students are always
+// scoped to themselves) — required-ness is enforced in the handler.
 const queueEvaluationSchema = z.object({
-  studentId: z.string().uuid(),
+  studentId: z.string().uuid().optional(),
   jobId: z.string().uuid(),
 });
 
@@ -49,17 +48,20 @@ export async function POST(request: NextRequest) {
       if (!student) return notFoundError('Student profile');
       studentId = student.id;
     } else {
-      // PLACEMENT_ADMIN can queue for any student
+      // PLACEMENT_ADMIN can queue for any student — but must say which
+      if (!parsed.data.studentId) {
+        return badRequestError('studentId is required for PLACEMENT_ADMIN');
+      }
       studentId = parsed.data.studentId;
     }
 
     const evaluation = await evaluationsService.queueEvaluation(studentId, parsed.data.jobId);
     return successResponse(evaluation, undefined, 201);
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error instanceof z.ZodError) {
       return badRequestError('Validation failed', error.flatten().fieldErrors);
     }
-    if (error.statusCode === 404) {
+    if (isApiError(error) && error.statusCode === 404) {
       return notFoundError(error.message);
     }
     console.error('[EVALUATIONS_QUEUE_ERROR]', error);

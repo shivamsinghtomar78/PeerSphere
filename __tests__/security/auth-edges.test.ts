@@ -3,7 +3,7 @@
  * role enforcement at the handler level and malformed credentials.
  */
 import { NextRequest } from 'next/server';
-import { middleware } from '@/middleware';
+import { proxy as middleware } from '@/proxy';
 import { GET as listStudents } from '@/app/api/v1/students/route';
 
 function makeRequest(

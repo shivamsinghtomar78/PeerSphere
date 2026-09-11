@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { getAuthUser } from '@/middleware';
+import { getAuthUser } from '@/lib/auth/request';
 import * as studentsService from '@/lib/services/students.service';
 import {
   successResponse,
@@ -8,7 +8,7 @@ import {
   notFoundError,
   internalError,
 } from '@/lib/api/response';
-import { ApiError } from '@/lib/errors/api-error';
+import { isApiError } from '@/lib/errors/api-error';
 
 // ─── GET /students/:id ────────────────────────────────────────────────────────
 // Get a single student by ID (admin only)
@@ -35,8 +35,8 @@ export async function GET(
     }
 
     return successResponse(student);
-  } catch (error: any) {
-    if (error instanceof ApiError && error.statusCode === 404) {
+  } catch (error: unknown) {
+    if (isApiError(error) && error.statusCode === 404) {
       return notFoundError('Student');
     }
     console.error('[STUDENTS_GET_BY_ID_ERROR]', error);

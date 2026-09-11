@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { getAuthUser } from '@/middleware';
+import { getAuthUser } from '@/lib/auth/request';
 import * as analyticsService from '@/lib/services/analytics.service';
 import {
   successResponse,
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
       pageSize,
       hasNext: start + pageSize < items.length,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[REPORTS_GET_ERROR]', error);
     return internalError();
   }

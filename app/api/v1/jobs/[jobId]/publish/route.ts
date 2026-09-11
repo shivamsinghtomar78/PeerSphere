@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { getAuthUser } from '@/middleware';
+import { getAuthUser } from '@/lib/auth/request';
 import * as jobsService from '@/lib/services/jobs.service';
 import {
   successResponse,
@@ -9,7 +9,7 @@ import {
   conflictError,
   internalError,
 } from '@/lib/api/response';
-import { ApiError } from '@/lib/errors/api-error';
+import { isApiError } from '@/lib/errors/api-error';
 
 // ─── POST /jobs/:jobId/publish ───────────────────────────────────────────────
 // Publish a job (PLACEMENT_ADMIN only)
@@ -31,8 +31,8 @@ export async function POST(
     const { jobId } = await params;
     const job = await jobsService.publishJob(jobId, user.userId);
     return successResponse(job);
-  } catch (error: any) {
-    if (error instanceof ApiError) {
+  } catch (error: unknown) {
+    if (isApiError(error)) {
       if (error.statusCode === 404) return notFoundError(error.message);
       if (error.statusCode === 409) return conflictError(error.message);
     }

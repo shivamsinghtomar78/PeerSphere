@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { getAuthUser } from '@/middleware';
+import { getAuthUser } from '@/lib/auth/request';
 import * as applicationsService from '@/lib/services/applications.service';
 import * as studentsService from '@/lib/services/students.service';
 import * as jobsService from '@/lib/services/jobs.service';
@@ -12,7 +12,7 @@ import {
   unprocessableError,
   internalError,
 } from '@/lib/api/response';
-import { ApiError } from '@/lib/errors/api-error';
+import { isApiError } from '@/lib/errors/api-error';
 
 // ─── POST /jobs/:jobId/apply ────────────────────────────────────────────────
 // Student applies to a job. The latest resume version is attached automatically.
@@ -58,8 +58,8 @@ export async function POST(
       undefined,
       statusCode as 200 | 201
     );
-  } catch (error: any) {
-    if (error instanceof ApiError) {
+  } catch (error: unknown) {
+    if (isApiError(error)) {
       if (error.statusCode === 400) return badRequestError(error.message);
       if (error.statusCode === 404) return notFoundError(error.message);
       if (error.statusCode === 422) return unprocessableError(error.message, error.details);

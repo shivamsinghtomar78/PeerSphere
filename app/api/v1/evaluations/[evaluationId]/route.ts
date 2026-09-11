@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { getAuthUser } from '@/middleware';
+import { getAuthUser } from '@/lib/auth/request';
 import * as evaluationsService from '@/lib/services/evaluations.service';
 import {
   successResponse,
@@ -10,7 +10,7 @@ import {
   notFoundError,
   internalError,
 } from '@/lib/api/response';
-import { ApiError } from '@/lib/errors/api-error';
+import { isApiError } from '@/lib/errors/api-error';
 
 // ─── GET /evaluations/:evaluationId ────────────────────────────────────────────────
 
@@ -36,8 +36,8 @@ export async function GET(
     }
 
     return successResponse(evaluation);
-  } catch (error: any) {
-    if (error instanceof ApiError) {
+  } catch (error: unknown) {
+    if (isApiError(error)) {
       if (error.statusCode === 404) return notFoundError('Evaluation');
       if (error.statusCode === 403) return forbiddenError();
     }
@@ -91,8 +91,8 @@ export async function PATCH(
       user.userId
     );
     return successResponse(updated);
-  } catch (error: any) {
-    if (error instanceof ApiError) {
+  } catch (error: unknown) {
+    if (isApiError(error)) {
       if (error.statusCode === 404) return notFoundError('Evaluation');
       if (error.statusCode === 400) return badRequestError(error.message);
       if (error.statusCode === 403) return forbiddenError();

@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { getAuthUser } from '@/middleware';
+import { getAuthUser } from '@/lib/auth/request';
 import * as overridesService from '@/lib/services/overrides.service';
 import * as evaluationsService from '@/lib/services/evaluations.service';
 import {
@@ -11,7 +11,7 @@ import {
   notFoundError,
   internalError,
 } from '@/lib/api/response';
-import { ApiError } from '@/lib/errors/api-error';
+import { isApiError } from '@/lib/errors/api-error';
 
 // ─── POST /evaluations/:evaluationId/override ────────────────────────────────
 // Create a review override for an evaluation
@@ -58,8 +58,8 @@ export async function POST(
     );
 
     return successResponse(override, 'Override created successfully', 201);
-  } catch (error: any) {
-    if (error instanceof ApiError) {
+  } catch (error: unknown) {
+    if (isApiError(error)) {
       if (error.statusCode === 400) return badRequestError(error.message);
       if (error.statusCode === 404) return notFoundError('Evaluation');
     }

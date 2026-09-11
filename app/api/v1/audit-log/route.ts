@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { getAuthUser } from '@/middleware';
+import { getAuthUser } from '@/lib/auth/request';
 import * as overridesService from '@/lib/services/overrides.service';
 import {
   successResponse,
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
     );
     const result = await overridesService.listAuditEvents(query);
     return successResponse(result);
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error instanceof z.ZodError) {
       return badRequestError('Validation failed', error.flatten().fieldErrors);
     }

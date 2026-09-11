@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { getAuthUser } from '@/middleware';
+import { getAuthUser } from '@/lib/auth/request';
 import * as resumesService from '@/lib/services/resumes.service';
 import {
   successResponse,
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     // List all resumes for all students (admin view)
     // This is a placeholder - in production you'd want pagination
     return successResponse({ message: 'Use /students/:id/resumes or /students/me/resumes' });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[RESUMES_GET_ERROR]', error);
     return internalError();
   }

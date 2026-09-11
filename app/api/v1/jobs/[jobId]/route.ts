@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { getAuthUser } from '@/middleware';
+import { getAuthUser } from '@/lib/auth/request';
 import * as jobsService from '@/lib/services/jobs.service';
 import {
   successResponse,
@@ -10,7 +10,7 @@ import {
   notFoundError,
   internalError,
 } from '@/lib/api/response';
-import { ApiError } from '@/lib/errors/api-error';
+import { isApiError } from '@/lib/errors/api-error';
 
 const updateJobSchema = z.object({
   title: z.string().min(1).max(255).optional(),
@@ -50,8 +50,8 @@ export async function GET(
     }
 
     return successResponse(job);
-  } catch (error: any) {
-    if (error instanceof ApiError && error.statusCode === 404) {
+  } catch (error: unknown) {
+    if (isApiError(error) && error.statusCode === 404) {
       return notFoundError('Job');
     }
     console.error('[JOBS_GET_BY_ID_ERROR]', error);
@@ -89,8 +89,8 @@ export async function PATCH(
       minCgpa: parsed.data.minCgpa ?? undefined,
     });
     return successResponse(job);
-  } catch (error: any) {
-    if (error instanceof ApiError) {
+  } catch (error: unknown) {
+    if (isApiError(error)) {
       if (error.statusCode === 400) return badRequestError(error.message);
       if (error.statusCode === 404) return notFoundError(error.message);
     }
