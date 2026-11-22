@@ -7,18 +7,18 @@
 /* ─── Light Mode Tokens ───────────────────────────────────────────── */
 :root {
   /* Canvas — page background */
-  --ps-canvas:          hsl(220 14% 96%);
-  --ps-canvas-subtle:   hsl(220 14% 98%);
+  --ps-canvas:          hsl(215 28% 97%);
+  --ps-canvas-subtle:   hsl(210 25% 98.5%);
 
   /* Surface — opaque elevated cards/panels */
   --ps-surface:         hsl(0 0% 100%);
-  --ps-surface-raised:  hsl(220 14% 98%);
+  --ps-surface-raised:  hsl(210 25% 99%);
   --ps-surface-overlay: hsl(0 0% 100%);
 
   /* Border */
-  --ps-border:          hsl(220 13% 88%);
-  --ps-border-subtle:   hsl(220 13% 93%);
-  --ps-border-strong:   hsl(220 13% 78%);
+  --ps-border:          hsl(215 20% 86%);
+  --ps-border-subtle:   hsl(215 22% 92%);
+  --ps-border-strong:   hsl(215 18% 76%);
 
   /* Text */
   --ps-text:            hsl(222 20% 10%);
@@ -27,9 +27,9 @@
   --ps-text-inverse:    hsl(0 0% 100%);
 
   /* Accent — one restrained institutional blue */
-  --ps-accent:          hsl(221 83% 53%);
-  --ps-accent-light:    hsl(221 83% 95%);
-  --ps-accent-dark:     hsl(221 83% 43%);
+  --ps-accent:          hsl(217 76% 42%);
+  --ps-accent-light:    hsl(215 85% 95%);
+  --ps-accent-dark:     hsl(217 82% 34%);
   --ps-accent-muted:    hsl(221 50% 70%);
 
   /* Semantic — Success */
@@ -62,17 +62,17 @@
   --ps-focus-ring:      0 0 0 2px hsl(0 0% 100%), 0 0 0 4px hsl(221 83% 53%);
 
   /* Glass — navigation chrome */
-  --ps-glass-nav-bg:          hsla(220 20% 98% / 0.80);
-  --ps-glass-nav-border:      hsla(220 20% 80% / 0.60);
-  --ps-glass-nav-shadow:      0 1px 24px hsla(220 30% 10% / 0.08);
-  --ps-glass-nav-blur:        blur(20px);
-  --ps-glass-nav-saturate:    saturate(1.8);
+  --ps-glass-nav-bg:          hsl(0 0% 100%);
+  --ps-glass-nav-border:      hsl(215 22% 92%);
+  --ps-glass-nav-shadow:      none;
+  --ps-glass-nav-blur:        none;
+  --ps-glass-nav-saturate:    none;
 
   /* Glass — controls (buttons, tabs, filters) */
-  --ps-glass-ctrl-bg:         hsla(220 20% 100% / 0.70);
-  --ps-glass-ctrl-border:     hsla(220 20% 80% / 0.50);
-  --ps-glass-ctrl-shadow:     0 1px 8px hsla(220 30% 10% / 0.06);
-  --ps-glass-ctrl-blur:       blur(12px);
+  --ps-glass-ctrl-bg:         hsl(0 0% 100%);
+  --ps-glass-ctrl-border:     hsl(215 20% 86%);
+  --ps-glass-ctrl-shadow:     none;
+  --ps-glass-ctrl-blur:       none;
 
   /* Glass — overlays (dialogs, sheets, menus) */
   --ps-glass-overlay-bg:      hsla(220 20% 100% / 0.90);

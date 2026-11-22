@@ -88,7 +88,7 @@ export function GlassButton({
         className={cn(
           // Base
           'inline-flex items-center justify-center',
-          'font-medium rounded-sm',
+          'font-semibold rounded-md',
           'transition-base',
           'cursor-pointer select-none',
           // Focus
@@ -130,7 +130,7 @@ export function GlassButton({
       className={cn(
         // Base
         'inline-flex items-center justify-center',
-        'font-medium rounded-sm',
+        'font-semibold rounded-md',
         'transition-base',
         'cursor-pointer select-none',
         // Focus
@@ -216,7 +216,7 @@ export function GlassIconButton({
         aria-busy={loading}
         className={cn(
           'inline-flex items-center justify-center',
-          'rounded-sm transition-base cursor-pointer',
+          'rounded-md transition-base cursor-pointer',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
           'focus-visible:ring-[var(--ps-focus)]',
           isDisabled && 'opacity-50 cursor-not-allowed pointer-events-none',
@@ -239,7 +239,7 @@ export function GlassIconButton({
       aria-busy={loading}
       className={cn(
         'inline-flex items-center justify-center',
-        'rounded-sm transition-base cursor-pointer',
+        'rounded-md transition-base cursor-pointer',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
         'focus-visible:ring-[var(--ps-focus)]',
         isDisabled && 'opacity-50 cursor-not-allowed pointer-events-none',

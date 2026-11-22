@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { GlassBadge, EligibilityBadge } from '@/components/ui/GlassBadge';
-import { ClayButton } from '@/components/ui/ClayButton';
 import { SkillChip } from '@/components/product/SkillChip';
 import { MatchScore } from '@/components/product/MatchScore';
 import { ThemeSwitcher } from '@/components/layout/ThemeSwitcher';
@@ -133,7 +132,7 @@ function StepList({ kicker, steps }: { kicker: string; steps: readonly { title: 
 // structure to the ResumeComparison + eligibility checklist in-product.
 function ExplainabilityShowcase() {
   return (
-    <GlassCard variant="surface" padding="lg" className="shadow-lg space-y-4">
+    <GlassCard variant="surface" padding="lg" className="shadow-md space-y-4 border-border">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="flex-1 min-w-[16rem]">
           <span className="text-caption font-semibold uppercase tracking-wider text-text-muted">
@@ -187,12 +186,12 @@ function ExplainabilityShowcase() {
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen flex flex-col bg-canvas">
+    <div className="ps-marketing min-h-screen flex flex-col bg-canvas">
       {/* ── Top bar ── */}
       <header className="sticky top-0 z-[var(--ps-z-header)] glass-nav border-x-0 border-t-0">
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-4 px-6 py-2.5">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-accent flex items-center justify-center text-text-inverse font-bold text-lg shadow-sm">
+            <div className="ps-brand-mark w-9 h-9 rounded-lg bg-accent flex items-center justify-center text-text-inverse font-bold text-lg shadow-sm">
               P
             </div>
             <span className="font-bold text-xl tracking-tight text-text">PeerSphere</span>
@@ -213,12 +212,12 @@ export default function HomePage() {
       </header>
 
       {/* ── Hero ── */}
-      <section className="max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center px-6 pt-12 lg:pt-18 pb-14">
-        <div className="space-y-6">
+      <section className="max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-[0.92fr_1.08fr] gap-10 lg:gap-16 items-center px-5 sm:px-6 pt-16 lg:pt-24 pb-16 lg:pb-20">
+        <div className="space-y-7">
           <GlassBadge variant="accent" size="md">
             Campus placement intelligence
           </GlassBadge>
-          <h1 className="text-display text-text" style={{ fontSize: 'clamp(2.25rem, 5vw, 3.75rem)' }}>
+          <h1 className="text-display text-text max-w-xl" style={{ fontSize: 'clamp(2.5rem, 5vw, 4.25rem)' }}>
             Explainable.
             <br />
             Never black-box.
@@ -228,10 +227,10 @@ export default function HomePage() {
             decomposes into per-skill evidence, pass–fail eligibility rules, and a roadmap that says
             exactly what to learn to raise it.
           </p>
-          <div className="flex items-center gap-4 flex-wrap">
-            <ClayButton size="lg" href="/auth" rightIcon={<ArrowRight size={18} aria-hidden />}>
+          <div className="flex items-center gap-3 flex-wrap">
+            <GlassButton variant="primary" size="lg" href="/auth" rightIcon={<ArrowRight size={18} aria-hidden />}>
               Enter as student
-            </ClayButton>
+            </GlassButton>
             <GlassButton variant="secondary" size="lg" href="/auth">
               Enter as placement officer
             </GlassButton>
@@ -245,19 +244,19 @@ export default function HomePage() {
       </section>
 
       {/* ── Social proof / stats band ── */}
-      <section aria-label="Platform outcomes" className="max-w-6xl mx-auto w-full px-6 pb-12">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <section aria-label="Platform outcomes" className="max-w-6xl mx-auto w-full px-5 sm:px-6 pb-16">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-0 border-y border-border-subtle">
           {STATS.map((s) => (
-            <GlassCard key={s.label} variant="surface" padding="lg" className="text-center">
+            <div key={s.label} className="px-5 py-6 text-center first:border-b last:border-t sm:border-y-0 sm:border-r sm:last:border-r-0 border-border-subtle">
               <div className="text-3xl font-bold tracking-tight text-accent-dark tabular">{s.value}</div>
               <div className="text-caption text-text-muted mt-1">{s.label}</div>
-            </GlassCard>
+            </div>
           ))}
         </div>
       </section>
 
       {/* ── How it works ── */}
-      <section id="how-it-works" aria-label="How it works" className="max-w-6xl mx-auto w-full px-6 py-12 space-y-6">
+      <section id="how-it-works" aria-label="How it works" className="max-w-6xl mx-auto w-full px-5 sm:px-6 py-16 lg:py-20 space-y-8">
         <h2 className="text-h2 text-text">How it works</h2>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <StepList kicker="For students" steps={STUDENT_STEPS} />
@@ -266,21 +265,21 @@ export default function HomePage() {
       </section>
 
       {/* ── Feature highlights ── */}
-      <section id="features" aria-label="Features" className="max-w-6xl mx-auto w-full px-6 py-12 space-y-6">
+      <section id="features" aria-label="Features" className="max-w-6xl mx-auto w-full px-5 sm:px-6 py-16 lg:py-20 space-y-8">
         <h2 className="text-h2 text-text">Built for decisions people can defend</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-border-subtle border border-border-subtle rounded-md overflow-hidden">
           {FEATURES.map((f) => (
-            <GlassCard key={f.title} padding="lg" className="space-y-2">
+            <div key={f.title} className="bg-surface p-5 sm:p-6 space-y-2">
               <h3 className="font-semibold text-text">{f.title}</h3>
               <p className="text-sm text-text-muted leading-relaxed">{f.text}</p>
-            </GlassCard>
+            </div>
           ))}
         </div>
       </section>
 
       {/* ── Footer ── */}
       <footer className="mt-auto border-t border-border-subtle">
-        <div className="max-w-6xl mx-auto px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-text-muted">
+        <div className="max-w-6xl mx-auto px-5 sm:px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-text-muted">
           <span>PeerSphere — placement matching &amp; skill-gap analysis</span>
           <nav className="flex items-center gap-4" aria-label="Footer">
             <Link href="/auth" className="hover:text-text transition-base">

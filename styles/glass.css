@@ -24,8 +24,8 @@
   background:       var(--ps-glass-nav-bg);
   border:           1px solid var(--ps-glass-nav-border);
   box-shadow:       var(--ps-glass-nav-shadow);
-  backdrop-filter:  var(--ps-glass-nav-blur) var(--ps-glass-nav-saturate);
-  -webkit-backdrop-filter: var(--ps-glass-nav-blur) var(--ps-glass-nav-saturate);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 /* ─── Glass — Controls (buttons, tabs, search, filters) ─────────── */
@@ -42,8 +42,8 @@
 }
 
 .glass-ctrl:hover:not(:disabled) {
-  border-color: var(--ps-border-strong);
-  box-shadow: var(--ps-shadow-md);
+  border-color: var(--ps-accent-muted);
+  box-shadow: none;
 }
 
 /* ─── Glass — Overlay (dialogs, sheets, menus, popovers) ─────────── */
@@ -51,8 +51,8 @@
   background:       var(--ps-glass-overlay-bg);
   border:           1px solid var(--ps-glass-overlay-border);
   box-shadow:       var(--ps-glass-overlay-shadow);
-  backdrop-filter:  var(--ps-glass-overlay-blur);
-  -webkit-backdrop-filter: var(--ps-glass-overlay-blur);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 /* ─── Glass — Floating action ────────────────────────────────────── */

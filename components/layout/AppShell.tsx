@@ -21,7 +21,8 @@ export function AppShell({ role, title, children }: AppShellProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div className="flex h-dvh overflow-hidden bg-canvas">
+    <div className="ps-app-shell flex h-dvh overflow-hidden bg-canvas">
+      <a className="ps-skip-link" href="#main-content">Skip to workspace</a>
       {/* Desktop Sidebar */}
       <Sidebar
         role={role}
@@ -49,11 +50,11 @@ export function AppShell({ role, title, children }: AppShellProps) {
           id="main-content"
           tabIndex={-1}
           className={cn(
-            'flex-1 overflow-y-auto',
-            'pb-[calc(var(--ps-bottom-nav-height)+env(safe-area-inset-bottom,0px))] lg:pb-0',
+            'ps-app-main flex-1 overflow-y-auto',
+            'pb-[calc(var(--ps-bottom-nav-height)+env(safe-area-inset-bottom,0px))] lg:pb-0 bg-canvas',
           )}
         >
-          {children}
+          <div className="ps-page-frame">{children}</div>
         </main>
       </div>
 

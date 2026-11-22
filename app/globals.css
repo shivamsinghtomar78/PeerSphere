@@ -7,6 +7,7 @@
 @import "../styles/tokens.css";
 @import "../styles/glass.css";
 @import "../styles/clay.css";
+@import "../styles/premium.css";
 
 /* ─── Tailwind Theme Extension — map CSS vars → Tailwind tokens ─── */
 @theme inline {
@@ -120,6 +121,36 @@ body {
   background-color: var(--ps-canvas);
   min-height: 100dvh;
   overflow-x: hidden;
+}
+
+/* A quiet workspace canvas: surfaces only group related information. */
+main > div {
+  min-height: 100%;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+th {
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ps-text-muted);
+  background: var(--ps-canvas-subtle);
+}
+
+tbody tr {
+  transition: background-color var(--ps-dur-micro) var(--ps-ease-out);
+}
+
+tbody tr:hover {
+  background: var(--ps-canvas-subtle);
+}
+
+::selection {
+  color: var(--ps-text-inverse);
+  background: var(--ps-accent);
 }
 
 /* ─── Semantic Typography Classes ────────────────────────────────── */

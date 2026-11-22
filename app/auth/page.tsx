@@ -120,7 +120,7 @@ export default function AuthPage() {
   // If loading auth state, show loading
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col bg-canvas">
+      <div className="ps-auth min-h-screen flex flex-col bg-canvas">
         <header className="flex items-center justify-between px-6 py-4 border-b border-border-subtle">
           <Link href="/" className="flex items-center gap-3 group">
             <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center text-text-inverse font-bold text-base shadow-sm">
@@ -142,11 +142,11 @@ export default function AuthPage() {
   const displayError = formError || authError;
 
   return (
-    <div className="min-h-screen flex flex-col bg-canvas">
+    <div className="ps-auth min-h-screen flex flex-col bg-canvas">
       {/* Top bar */}
       <header className="flex items-center justify-between px-6 py-4 border-b border-border-subtle">
         <Link href="/" className="flex items-center gap-3 group">
-          <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center text-text-inverse font-bold text-base shadow-sm">
+          <div className="ps-brand-mark w-8 h-8 rounded-lg bg-accent flex items-center justify-center text-text-inverse font-bold text-base shadow-sm">
             P
           </div>
           <span className="font-bold text-lg tracking-tight text-text group-hover:text-accent transition-base">

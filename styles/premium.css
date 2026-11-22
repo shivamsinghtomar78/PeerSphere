@@ -1,0 +1,262 @@
+/*
+ * PeerSphere product layer
+ * A shared visual language for every real application route. The palette is
+ * deliberately academic rather than “SaaS blue”: ink, paper, cobalt and a
+ * small warm signal colour create hierarchy without relying on gradients.
+ */
+
+:root {
+  --ps-ink: #122038;
+  --ps-cobalt: #2457d6;
+  --ps-cobalt-deep: #153a9e;
+  --ps-signal: #ffbd59;
+  --ps-grid-line: rgb(36 87 214 / 0.055);
+}
+
+/* A calm editorial system for dense academic work: the warm signal is
+   reserved for orientation, while cobalt means an available action. */
+.ps-skip-link {
+  position: fixed;
+  z-index: calc(var(--ps-z-toast) + 1);
+  top: 0.75rem;
+  left: 0.75rem;
+  padding: 0.65rem 0.9rem;
+  border-radius: 0.6rem;
+  background: var(--ps-ink);
+  color: white;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  transform: translateY(-150%);
+  transition: transform var(--ps-dur-fast) var(--ps-ease-out);
+}
+
+.ps-skip-link:focus { transform: translateY(0); }
+
+.ps-app-shell {
+  position: relative;
+  isolation: isolate;
+  background:
+    radial-gradient(circle at 88% -10%, rgb(36 87 214 / 0.12), transparent 26rem),
+    radial-gradient(circle at 5% 105%, rgb(255 189 89 / 0.12), transparent 25rem),
+    var(--ps-canvas);
+}
+
+.ps-app-main {
+  background-image:
+    linear-gradient(var(--ps-grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--ps-grid-line) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.ps-page-frame {
+  min-height: 100%;
+  position: relative;
+}
+
+.ps-page-frame > div {
+  position: relative;
+  z-index: 1;
+  animation: ps-page-in 420ms var(--ps-ease-out) both;
+}
+
+.ps-brand-mark {
+  position: relative;
+  overflow: hidden;
+  border-radius: 11px;
+  background: var(--ps-ink) !important;
+  box-shadow: 0 8px 20px rgb(18 32 56 / 0.22);
+}
+
+.ps-brand-mark::after {
+  content: '';
+  position: absolute;
+  width: 19px;
+  height: 19px;
+  border: 3px solid var(--ps-signal);
+  border-radius: 999px;
+  right: -8px;
+  top: -7px;
+}
+
+.glass-nav {
+  background: color-mix(in srgb, var(--ps-surface) 88%, transparent) !important;
+  backdrop-filter: blur(18px) saturate(1.2);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  box-shadow: 0 1px 0 rgb(18 32 56 / 0.06);
+}
+
+/* The sidebar is navigation, not another card. Give it its own calm material. */
+aside.glass-nav {
+  background: color-mix(in srgb, var(--ps-surface) 94%, var(--ps-cobalt) 6%) !important;
+}
+
+aside.glass-nav nav a {
+  border-radius: 10px !important;
+  min-height: 42px;
+}
+
+aside.glass-nav nav a[aria-current='page'] {
+  box-shadow: inset 3px 0 0 var(--ps-cobalt), 0 5px 12px rgb(36 87 214 / 0.07);
+}
+
+/* Shared components: enough depth to identify hierarchy, never enough to feel glossy. */
+.surface,
+.surface-raised,
+.ps-page-frame .bg-surface.border,
+.ps-page-frame .bg-surface-raised.border {
+  border-radius: var(--ps-radius-lg);
+}
+
+.surface {
+  box-shadow: 0 1px 1px rgb(18 32 56 / 0.025), 0 10px 28px rgb(18 32 56 / 0.035);
+}
+
+.surface-raised {
+  box-shadow: 0 12px 34px rgb(18 32 56 / 0.08);
+}
+
+.ps-page-frame .surface:hover:not(:has(button:hover, a:hover)) {
+  border-color: color-mix(in srgb, var(--ps-border-strong) 70%, var(--ps-cobalt));
+}
+
+/* Existing screens use the same small set of primitives. These rules give
+   every dashboard, form, table, and result grid a common visual rhythm while
+   leaving their data and interaction flows untouched. */
+.ps-page-frame .grid > .surface,
+.ps-page-frame .grid > .surface-raised {
+  min-width: 0;
+}
+
+.ps-page-frame .grid > .surface:has(a, button):hover,
+.ps-page-frame .grid > .surface-raised:has(a, button):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 15px 32px rgb(18 32 56 / 0.10);
+}
+
+.ps-page-frame table tbody tr {
+  border-color: color-mix(in srgb, var(--ps-border-subtle) 85%, var(--ps-cobalt));
+}
+
+.ps-page-frame table td,
+.ps-page-frame table th { white-space: normal; }
+
+.ps-page-frame h1 { text-wrap: balance; }
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button[class*='bg-accent'],
+a[class*='bg-accent'] {
+  box-shadow: 0 7px 16px rgb(36 87 214 / 0.2);
+}
+
+button[class*='bg-accent']:hover,
+a[class*='bg-accent']:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgb(36 87 214 / 0.26);
+}
+
+.ps-page-frame input,
+.ps-page-frame select,
+.ps-page-frame textarea {
+  border-radius: 10px;
+}
+
+.ps-page-frame table {
+  overflow: hidden;
+  border-radius: var(--ps-radius-lg);
+}
+
+.ps-page-frame th {
+  background: color-mix(in srgb, var(--ps-canvas-subtle) 84%, var(--ps-cobalt) 5%);
+  font-weight: 700;
+}
+
+.bento-grid > .surface:first-child {
+  background:
+    linear-gradient(135deg, rgb(36 87 214 / 0.10), transparent 45%),
+    var(--ps-surface);
+}
+
+.tabular {
+  letter-spacing: -0.03em;
+}
+
+@keyframes ps-page-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 1023px) {
+  .ps-app-main { background-size: 30px 30px; }
+}
+
+@media (max-width: 639px) {
+  .ps-app-main { background-image: none; }
+  .ps-page-frame .grid > .surface:has(a, button):hover,
+  .ps-page-frame .grid > .surface-raised:has(a, button):hover { transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ps-page-frame > div { animation: none; }
+  button[class*='bg-accent']:hover,
+  a[class*='bg-accent']:hover { transform: none; }
+}
+
+[data-theme='dark'] .ps-app-shell {
+  background:
+    radial-gradient(circle at 88% -10%, rgb(91 131 255 / 0.18), transparent 26rem),
+    radial-gradient(circle at 5% 105%, rgb(255 189 89 / 0.08), transparent 25rem),
+    var(--ps-canvas);
+}
+
+[data-theme='dark'] .ps-app-main { --ps-grid-line: rgb(151 173 255 / 0.055); }
+
+/* Public surfaces inherit the same identity while keeping their own rhythm. */
+.ps-marketing,
+.ps-auth {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 83% 8%, rgb(36 87 214 / 0.12), transparent 26rem),
+    radial-gradient(circle at 8% 74%, rgb(255 189 89 / 0.10), transparent 23rem),
+    var(--ps-canvas) !important;
+}
+
+.ps-marketing > header,
+.ps-auth > header {
+  background: color-mix(in srgb, var(--ps-surface) 84%, transparent);
+  backdrop-filter: blur(18px) saturate(1.2);
+}
+
+.ps-marketing h1 {
+  letter-spacing: -0.055em;
+  text-wrap: balance;
+}
+
+.ps-marketing section {
+  position: relative;
+}
+
+.ps-marketing #features > div > div:first-child {
+  background: linear-gradient(145deg, rgb(36 87 214 / 0.12), transparent 72%), var(--ps-surface);
+}
+
+.ps-auth main {
+  position: relative;
+  z-index: 1;
+}
+
+.ps-auth main > div {
+  animation: ps-page-in 360ms var(--ps-ease-out) both;
+}
+
+[data-theme='dark'] .ps-marketing,
+[data-theme='dark'] .ps-auth {
+  background:
+    radial-gradient(circle at 83% 8%, rgb(91 131 255 / 0.18), transparent 26rem),
+    radial-gradient(circle at 8% 74%, rgb(255 189 89 / 0.07), transparent 23rem),
+    var(--ps-canvas) !important;
+}

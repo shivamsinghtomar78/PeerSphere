@@ -82,10 +82,8 @@ const nextConfig = {
     },
   },
   
-  // No `output` override: 'standalone' is for self-hosted/Docker deploys
-  // (nothing here consumes .next/standalone) and it conflicts with Vercel's
-  // build adapter — the deploy died in onBuildComplete unable to find
-  // .next/next-server.js.nft.json when standalone was set.
+  // Standalone output for InstaCloud / Docker deployment
+  output: 'standalone',
 
   // Add empty turbopack config to silence warning
   turbopack: {},

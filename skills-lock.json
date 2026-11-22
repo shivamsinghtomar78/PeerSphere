@@ -1,6 +1,36 @@
 {
   "version": 1,
   "skills": {
+    "better-auth-best-practices": {
+      "source": "better-auth/skills",
+      "sourceType": "github",
+      "skillPath": "better-auth/best-practices/SKILL.md",
+      "computedHash": "f35281e7a0c07b3fd3c4e96c7833dafb294a3a8662cb68a8544f4225008d6568"
+    },
+    "better-auth-security-best-practices": {
+      "source": "better-auth/skills",
+      "sourceType": "github",
+      "skillPath": "security/SKILL.md",
+      "computedHash": "087c1094fa5f1834af4785c058dcc8c9abe4c1321b853883c76ea46c93a21cfe"
+    },
+    "email-and-password-best-practices": {
+      "source": "better-auth/skills",
+      "sourceType": "github",
+      "skillPath": "better-auth/emailAndPassword/SKILL.md",
+      "computedHash": "ac9f9b0a549390f157ec62f5421a0bc90ac622c7e425af13155953847e0b68ea"
+    },
+    "file-storage": {
+      "source": "tigrisdata/skills",
+      "sourceType": "github",
+      "skillPath": "skills/file-storage/SKILL.md",
+      "computedHash": "d5271a60639fca71d2e3d874140fba5b5f0f37c4f2b82daa8817673eb7552a13"
+    },
+    "insta": {
+      "source": "InsForge/instacloud-skills",
+      "sourceType": "github",
+      "skillPath": "insta/SKILL.md",
+      "computedHash": "089c18b4939ce8e2c9be2fb9e1ba2e5159446c48bd199c1d1e23ad259b70f46e"
+    },
     "neon": {
       "source": "neondatabase/agent-skills",
       "sourceType": "github",
@@ -12,6 +42,65 @@
       "sourceType": "github",
       "skillPath": "skills/neon-postgres/SKILL.md",
       "computedHash": "2989af6804b11be25eb956dc0660ed503a3f4dd1c7a0b7bc8f3b5981e1db2270"
+    },
+    "stageshow": {
+      "source": "registry:benjitaylor/stageshow",
+      "commit_sha": "802057409787133703c56001080169e347305572",
+      "digest": "sha256:4ccee47aa4210767884159743753a7a9e0563336df7b6af61c4b2b009f693a33",
+      "agents": [
+        "claude-code",
+        "codex",
+        "github-copilot",
+        "cline"
+      ],
+      "mode": {
+        "claude-code": "junction",
+        "codex": "canonical",
+        "github-copilot": "junction",
+        "cline": "canonical"
+      }
+    },
+    "tigris-agent-kit": {
+      "source": "tigrisdata/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tigris-agent-kit/SKILL.md",
+      "computedHash": "c6813193ea82c01dd795227c8027cdc77495c7229c30032d5785553c989d7832"
+    },
+    "tigris-image-optimization": {
+      "source": "tigrisdata/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tigris-image-optimization/SKILL.md",
+      "computedHash": "ac7f7b01aafb713a92f33f83b931a76b697163c93191a3c9e477d0053047a17f"
+    },
+    "tigris-object-operations": {
+      "source": "tigrisdata/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tigris-object-operations/SKILL.md",
+      "computedHash": "c24c7636ab2a989e05a4e95bd2613006faa9958e03a3248ad9ebce8896f8ba3b"
+    },
+    "tigris-s3-migration": {
+      "source": "tigrisdata/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tigris-s3-migration/SKILL.md",
+      "computedHash": "33e71d6c7d5dc023d2788e6dfdacf1ac961b6b7c677793e55bb99cd4682e64fc"
+    },
+    "tigris-sdk-guide": {
+      "source": "tigrisdata/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tigris-sdk-guide/SKILL.md",
+      "computedHash": "027477901fd5d2b7ec82f755195dbd93762c108959940329d41bae4e6266c5eb"
+    },
+    "tigris-security-access-control": {
+      "source": "tigrisdata/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tigris-security-access-control/SKILL.md",
+      "computedHash": "29f2ad11c07f3eb7c5590d73888ad5af1008a9ed39608f11e78fb6e6984fbd26"
+    },
+    "tigris-static-assets": {
+      "source": "tigrisdata/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tigris-static-assets/SKILL.md",
+      "computedHash": "11147a9bf133cf60ba39935fd47ec43861c96f3c20015ffb703f3cf436f5748b"
     }
   }
 }

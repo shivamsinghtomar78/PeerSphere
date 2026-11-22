@@ -15,13 +15,13 @@ const paddingMap = {
   none: '',
   sm: 'p-3',
   md: 'p-4',
-  lg: 'p-6',
+  lg: 'p-5 sm:p-6',
 };
 
 const radiusMap = {
   md: 'rounded-md',
-  lg: 'rounded-lg',
-  xl: 'rounded-xl',
+  lg: 'rounded-md',
+  xl: 'rounded-lg',
 };
 
 /**
@@ -40,7 +40,7 @@ export function GlassCard({
   return (
     <div
       className={cn(
-        'transition-base',
+        'transition-base motion-reduce:transition-none',
         variant === 'surface' && 'surface',
         variant === 'surface-raised' && 'surface-raised',
         variant === 'canvas' && 'bg-canvas border border-border-subtle',

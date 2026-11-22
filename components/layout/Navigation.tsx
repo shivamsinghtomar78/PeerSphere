@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { GlassIconButton } from '@/components/ui/GlassButton';
+import { useAuth } from '@/hooks/useAuth';
 import { ThemeSwitcher } from './ThemeSwitcher';
 
 // ─── Student Navigation Items ─────────────────────────────────────
@@ -52,16 +53,16 @@ export function Sidebar({ role, collapsed = false, onCollapse }: SidebarProps) {
   return (
     <aside
       className={cn(
-        'hidden lg:flex flex-col h-full glass-nav transition-all duration-normal',
-        'border-r border-border-subtle',
+        'hidden lg:flex flex-col h-full glass-nav transition-all duration-normal bg-surface',
+        'border-r border-border',
         collapsed ? 'w-16' : 'w-64'
       )}
       style={{ zIndex: 'var(--ps-z-sidebar)' }}
       aria-label={`${role === 'student' ? 'Student' : 'Placement'} navigation`}
     >
       {/* Logo / Brand */}
-      <div className={cn('flex items-center gap-3 px-4 h-14 border-b border-border-subtle shrink-0', collapsed && 'justify-center px-0')}>
-        <div className="w-7 h-7 rounded-md bg-accent flex items-center justify-center text-text-inverse font-bold text-sm shrink-0">
+      <div className={cn('flex items-center gap-3 px-5 h-16 border-b border-border-subtle shrink-0', collapsed && 'justify-center px-0')}>
+        <div className="ps-brand-mark w-7 h-7 rounded-md bg-accent flex items-center justify-center text-text-inverse font-bold text-sm shrink-0">
           P
         </div>
         {!collapsed && (
@@ -71,7 +72,7 @@ export function Sidebar({ role, collapsed = false, onCollapse }: SidebarProps) {
 
       {/* Role label */}
       {!collapsed && (
-        <div className="px-4 py-2">
+        <div className="px-5 pt-5 pb-2">
           <span className="text-caption text-text-faint uppercase tracking-wider font-medium">
             {role === 'student' ? 'Student' : 'Placement Office'}
           </span>
@@ -79,8 +80,8 @@ export function Sidebar({ role, collapsed = false, onCollapse }: SidebarProps) {
       )}
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-2 px-2">
-        <ul role="list" className="space-y-0.5">
+      <nav className="flex-1 overflow-y-auto py-2 px-3">
+        <ul role="list" className="space-y-1">
           {navItems.map((item) => {
             const isActive = pathname === item.href || (item.href !== `/${role}` && pathname.startsWith(item.href));
             return (
@@ -89,12 +90,12 @@ export function Sidebar({ role, collapsed = false, onCollapse }: SidebarProps) {
                   href={item.href}
                   aria-current={isActive ? 'page' : undefined}
                   className={cn(
-                    'flex items-center gap-3 px-3 py-2.5 rounded-md',
+                    'flex items-center gap-3 px-3 py-2.5 rounded-sm',
                     'text-sm font-medium transition-base',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ps-focus)]',
                     isActive
                       ? 'bg-accent-light text-accent-dark glass-nav-highlight'
-                      : 'text-text-muted hover:text-text hover:bg-surface-raised',
+                      : 'text-text-muted hover:text-text hover:bg-canvas-subtle',
                     collapsed && 'justify-center px-2'
                   )}
                   title={collapsed ? item.label : undefined}
@@ -148,10 +149,34 @@ interface HeaderProps {
   onMenuOpen?: () => void;
 }
 
+function pageTitle(pathname: string, role: 'student' | 'placement'): string {
+  const titles: Record<string, string> = role === 'student'
+    ? {
+        '/student': 'Placement readiness', '/student/jobs': 'Opportunities',
+        '/student/applications': 'Application tracker', '/student/match': 'Match analysis',
+        '/student/skill-gaps': 'Skill gaps', '/student/recommendations': 'Growth roadmap',
+        '/student/profile': 'Your profile',
+      }
+    : {
+        '/placement': 'Placement command centre', '/placement/students': 'Student directory',
+        '/placement/jobs': 'Campus drives', '/placement/applications': 'Applications',
+        '/placement/candidates': 'Candidate ranking', '/placement/analytics': 'Placement intelligence',
+        '/placement/reports': 'Reports centre',
+      };
+  if (titles[pathname]) return titles[pathname];
+  if (pathname.startsWith('/student/jobs/')) return 'Opportunity details';
+  if (pathname.startsWith('/placement/candidates/')) return 'Candidate review';
+  if (pathname.startsWith('/placement/compare')) return 'Candidate comparison';
+  return role === 'student' ? 'Student workspace' : 'Placement workspace';
+}
+
 export function Header({ role, title, onMenuOpen }: HeaderProps) {
+  const pathname = usePathname();
+  const { user, logout } = useAuth();
+  const displayTitle = title ?? pageTitle(pathname, role);
   return (
     <header
-      className="glass-nav border-b border-border-subtle h-14 px-4 flex items-center gap-4 shrink-0"
+      className="glass-nav bg-surface border-b border-border-subtle h-16 px-4 sm:px-6 flex items-center gap-4 shrink-0"
       style={{ zIndex: 'var(--ps-z-header)' }}
     >
       {/* Mobile menu toggle */}
@@ -171,26 +196,32 @@ export function Header({ role, title, onMenuOpen }: HeaderProps) {
 
       {/* Logo (mobile only) */}
       <div className="flex items-center gap-2 lg:hidden">
-        <div className="w-6 h-6 rounded-md bg-accent flex items-center justify-center text-text-inverse font-bold text-xs">
+        <div className="ps-brand-mark w-6 h-6 rounded-md bg-accent flex items-center justify-center text-text-inverse font-bold text-xs">
           P
         </div>
         <span className="font-semibold text-text text-sm">PeerSphere</span>
       </div>
 
-      {/* Page title */}
-      {title && (
-        <h1 className="hidden lg:block text-title text-text truncate">
-          {title}
-        </h1>
-      )}
+      <div className="hidden lg:flex min-w-0 flex-col">
+        <span className="text-[10px] leading-none font-bold uppercase tracking-[0.16em] text-text-faint">
+          {role === 'student' ? 'Student workspace' : 'Placement office'}
+        </span>
+        <h1 className="mt-1 text-title text-text truncate">{displayTitle}</h1>
+      </div>
 
       <div className="ml-auto flex items-center gap-2">
         <ThemeSwitcher compact />
         {/* Role switcher (mock only — for demo) */}
-        <div className="hidden sm:flex items-center gap-1 px-2 py-1 rounded-sm bg-surface-raised border border-border-subtle">
-          <span className="text-xs text-text-muted">
-            {role === 'student' ? 'Student View' : 'Placement View'}
+        <div className="hidden sm:flex min-w-0 items-center gap-2 pl-2 pr-1 py-1 rounded-md bg-surface-raised border border-border-subtle">
+          <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-accent-light text-[10px] font-bold text-accent-dark" aria-hidden="true">
+            {user?.email?.slice(0, 1).toUpperCase() ?? 'P'}
           </span>
+          <span className="max-w-28 truncate text-xs font-medium text-text">{user?.email ?? 'Signed in'}</span>
+          <GlassIconButton label="Sign out" variant="ghost" size="sm" onClick={logout}>
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <path d="M10 17l5-5-5-5M15 12H3M21 19V5a2 2 0 0 0-2-2h-6" />
+            </svg>
+          </GlassIconButton>
         </div>
       </div>
     </header>
