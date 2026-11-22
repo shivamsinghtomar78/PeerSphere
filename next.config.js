@@ -82,8 +82,10 @@ const nextConfig = {
     },
   },
   
-  // Standalone output for InstaCloud / Docker deployment
-  output: 'standalone',
+  // Docker consumes Next's standalone bundle, while Vercel supplies its own
+  // serverless output adapter. Enabling standalone on Vercel makes its build
+  // hook look for a trace manifest in the wrong location.
+  ...(process.env.VERCEL ? {} : { output: 'standalone' }),
 
   // Add empty turbopack config to silence warning
   turbopack: {},
