@@ -174,10 +174,36 @@ a[class*='bg-accent']:hover {
   font-weight: 700;
 }
 
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+
+.bento-grid > * {
+  min-width: 0;
+}
+
 .bento-grid > .surface:first-child {
   background:
-    linear-gradient(135deg, rgb(36 87 214 / 0.10), transparent 45%),
+    linear-gradient(135deg, rgb(36 87 214 / 0.08), transparent 48%),
     var(--ps-surface);
+}
+
+/* Bento ambient & card polish */
+.ps-bento-glow {
+  position: relative;
+}
+.ps-bento-glow::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.55);
+}
+[data-theme='dark'] .ps-bento-glow::after {
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.07);
 }
 
 .tabular {

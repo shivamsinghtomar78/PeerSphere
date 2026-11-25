@@ -327,14 +327,17 @@ export async function fetchDashboardData() {
 export function getPrimaryMatch(evaluations: BackendEvaluation[]): BackendEvaluation | null {
   if (!evaluations || evaluations.length === 0) return null;
 
-  // Find completed evaluations with scores
-  const scoredEvals = evaluations.filter(
-    (e) => e.overallScore && e.overallScore > 0 && e.status === 'COMPLETED'
+  // Prefer completed evaluations with scores; fall back to any scored evaluation
+  const completed = evaluations.filter(
+    (e) => e.overallScore != null && e.overallScore > 0 && e.status === 'COMPLETED'
   );
+  const scoredEvals =
+    completed.length > 0
+      ? completed
+      : evaluations.filter((e) => e.overallScore != null && e.overallScore > 0);
 
   if (scoredEvals.length === 0) return null;
 
-  // Return the evaluation with the highest score
   return scoredEvals.reduce((best, current) =>
     (current.overallScore || 0) > (best.overallScore || 0) ? current : best
   );

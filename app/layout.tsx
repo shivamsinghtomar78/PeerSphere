@@ -4,6 +4,7 @@ import { ThemeProvider } from '@/lib/theme-context';
 import { ToastProvider } from '@/components/ui/Toast';
 import { AuthProvider } from '@/context/AuthContext';
 import { RegisterSW } from '@/components/pwa/RegisterSW';
+import { Agentation } from 'agentation';
 
 export const metadata: Metadata = {
   title: 'PeerSphere — AI-Based Placement Matching & Skill Gap Analysis',
@@ -37,13 +38,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" data-scroll-behavior="smooth" suppressHydrationWarning>
       <body className="min-h-screen bg-canvas text-text antialiased font-sans">
         <AuthProvider>
           <ThemeProvider>
             <ToastProvider>
               {children}
               <RegisterSW />
+              {process.env.NODE_ENV === 'development' && <Agentation />}
             </ToastProvider>
           </ThemeProvider>
         </AuthProvider>

@@ -8,8 +8,10 @@ import { GlassButton } from '@/components/ui/GlassButton';
 import { GlassBadge } from '@/components/ui/GlassBadge';
 import { GlassInput } from '@/components/ui/GlassInput';
 import { ThemeSwitcher } from '@/components/layout/ThemeSwitcher';
+import { PageTransition } from '@/components/ui/MotionPrimitives';
 import { useAuth } from '@/hooks/useAuth';
 import { getErrorMessage } from '@/lib/api-client';
+import { ShieldCheck, Sparkles, GitBranch, ArrowLeft, ArrowRight, Eye, EyeOff } from 'lucide-react';
 
 type Role = 'student' | 'placement';
 type Screen = 'role-select' | 'credentials' | 'signing-in';
@@ -31,11 +33,11 @@ const ROLE_META: Record<Role, {
   student: {
     label: 'Student',
     badgeLabel: 'Student Access',
-    description: 'Access your placement dashboard, AI match scores, skill gap diagnosis, and personalized milestone roadmaps.',
+    description: 'Access your placement readiness Bento dashboard, explainable match scores, and skill-gap roadmaps.',
     features: [
       'Bento Readiness Dashboard',
-      'Explainable AI Skill Match Scores',
-      'Personalized Milestone Roadmap',
+      'Explainable Skill Match Scores',
+      'Prioritized Milestone Roadmap',
       'Application Pipeline Tracking',
     ],
     destPath: '/student',
@@ -44,12 +46,12 @@ const ROLE_META: Record<Role, {
   placement: {
     label: 'Placement Officer',
     badgeLabel: 'Placement Admin',
-    description: 'Manage campus drives, screen candidates with AI-ranking governance, run comparison matrices, and export reports.',
+    description: 'Publish campus drives, screen ranked candidates, run comparison matrices, and export live reports.',
     features: [
-      'Multi-step Job Creation Wizard',
-      'Automated Candidate Ranking & Audit',
+      'Versioned Drive Creation',
+      'Automated Candidate Ranking',
       'Side-by-Side Comparison Matrix',
-      'Campus Skill Deficit Intelligence',
+      'Audited Override Governance',
     ],
     destPath: '/placement',
     accentClass: 'bg-success',
@@ -66,7 +68,6 @@ export default function AuthPage() {
   const [formError, setFormError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  // If already authenticated, redirect to appropriate dashboard
   useEffect(() => {
     if (!isLoading && isAuthenticated && user) {
       const path = user.role === 'STUDENT' ? '/student' : '/placement';
@@ -74,7 +75,6 @@ export default function AuthPage() {
     }
   }, [isLoading, isAuthenticated, user, router]);
 
-  // Clear auth error when changing screens
   useEffect(() => {
     if (screen !== 'credentials' && authError) {
       clearError();
@@ -83,7 +83,6 @@ export default function AuthPage() {
 
   function handleRoleSelect(role: Role) {
     setSelectedRole(role);
-    // Pre-fill demo credentials
     setEmail(DEMO_CREDENTIALS[role].email);
     setPassword(DEMO_CREDENTIALS[role].password);
     setFormError('');
@@ -110,41 +109,36 @@ export default function AuthPage() {
 
     try {
       await login(email, password);
-      // login function handles the redirect based on role
     } catch (error) {
       setScreen('credentials');
       setFormError(getErrorMessage(error));
     }
   }
 
-  // If loading auth state, show loading
   if (isLoading) {
     return (
       <div className="ps-auth min-h-screen flex flex-col bg-canvas">
         <header className="flex items-center justify-between px-6 py-4 border-b border-border-subtle">
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center text-text-inverse font-bold text-base shadow-sm">
+            <div className="ps-brand-mark w-8 h-8 rounded-lg bg-accent flex items-center justify-center text-text-inverse font-bold text-base shadow-sm">
               P
             </div>
-            <span className="font-bold text-lg tracking-tight text-text group-hover:text-accent transition-base">
-              PeerSphere
-            </span>
+            <span className="font-bold text-lg tracking-tight text-text">PeerSphere</span>
           </Link>
         </header>
         <main className="flex-1 flex items-center justify-center px-4 py-10">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-accent" aria-label="Loading authentication" />
         </main>
       </div>
     );
   }
 
-  // Combine form error and auth error
   const displayError = formError || authError;
 
   return (
     <div className="ps-auth min-h-screen flex flex-col bg-canvas">
       {/* Top bar */}
-      <header className="flex items-center justify-between px-6 py-4 border-b border-border-subtle">
+      <header className="sticky top-0 z-20 flex items-center justify-between px-5 sm:px-8 py-3.5 border-b border-border-subtle">
         <Link href="/" className="flex items-center gap-3 group">
           <div className="ps-brand-mark w-8 h-8 rounded-lg bg-accent flex items-center justify-center text-text-inverse font-bold text-base shadow-sm">
             P
@@ -156,61 +150,106 @@ export default function AuthPage() {
         <div className="flex items-center gap-3">
           <ThemeSwitcher compact />
           <Link href="/">
-            <GlassButton variant="ghost" size="sm">
-              ← Back to Home
+            <GlassButton variant="ghost" size="sm" leftIcon={<ArrowLeft size={14} />}>
+              Back to Home
             </GlassButton>
           </Link>
         </div>
       </header>
 
-      {/* Main content */}
-      <main className="flex-1 flex items-center justify-center px-4 py-10">
-        {screen === 'role-select' && <RoleSelectScreen onSelect={handleRoleSelect} />}
+      {/* Split-screen main */}
+      <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 max-w-6xl w-full mx-auto px-4 sm:px-6 py-8 lg:py-12 gap-8 items-center">
+        {/* Left editorial Bento showcase (desktop) */}
+        <aside className="hidden lg:flex lg:col-span-5 flex-col gap-4">
+          <div className="rounded-2xl bg-[#122038] text-white p-7 border border-white/10 shadow-xl space-y-6 relative overflow-hidden">
+            <div
+              className="absolute -right-14 -top-14 w-48 h-48 rounded-full opacity-25 pointer-events-none"
+              style={{ background: 'radial-gradient(circle, #ffbd59, transparent 70%)' }}
+            />
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-xs font-medium text-[#ffbd59] w-fit">
+              <Sparkles size={13} />
+              Explainable Placement Intelligence
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold tracking-tight leading-snug">
+                Every score traceable. Every decision defensible.
+              </h2>
+              <p className="text-sm text-slate-300 leading-relaxed">
+                Sign in to access your role-scoped workspace—built on deterministic eligibility rules, weighted skill matching, and append-only audit logs.
+              </p>
+            </div>
 
-        {screen === 'credentials' && selectedRole && (
-          <CredentialsScreen
-            role={selectedRole}
-            email={email}
-            password={password}
-            showPassword={showPassword}
-            error={displayError ?? ''}
-            onEmailChange={setEmail}
-            onPasswordChange={setPassword}
-            onTogglePassword={() => setShowPassword((p) => !p)}
-            onLogin={handleLogin}
-            onBack={handleBack}
-          />
-        )}
+            <div className="grid grid-cols-1 gap-3 pt-2">
+              <div className="rounded-xl bg-white/5 border border-white/10 p-3.5 flex items-start gap-3">
+                <ShieldCheck size={18} className="text-[#ffbd59] shrink-0 mt-0.5" />
+                <div>
+                  <div className="text-xs font-semibold">Zero-Hallucination Scoring</div>
+                  <div className="text-xs text-slate-300 mt-0.5">
+                    SHA-256 input snapshots guarantee 100% reproducible evaluations.
+                  </div>
+                </div>
+              </div>
+              <div className="rounded-xl bg-white/5 border border-white/10 p-3.5 flex items-start gap-3">
+                <GitBranch size={18} className="text-blue-300 shrink-0 mt-0.5" />
+                <div>
+                  <div className="text-xs font-semibold">Actionable Skill-Gap Roadmaps</div>
+                  <div className="text-xs text-slate-300 mt-0.5">
+                    Prioritized weekly steps and projected score lift for every gap.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </aside>
 
-        {screen === 'signing-in' && selectedRole && (
-          <SigningInScreen role={selectedRole} />
-        )}
+        {/* Right auth flow */}
+        <section className="lg:col-span-7 flex items-center justify-center w-full">
+          <PageTransition className="w-full max-w-xl">
+            {screen === 'role-select' && <RoleSelectScreen onSelect={handleRoleSelect} />}
+
+            {screen === 'credentials' && selectedRole && (
+              <CredentialsScreen
+                role={selectedRole}
+                email={email}
+                password={password}
+                showPassword={showPassword}
+                error={displayError ?? ''}
+                onEmailChange={setEmail}
+                onPasswordChange={setPassword}
+                onTogglePassword={() => setShowPassword((p) => !p)}
+                onLogin={handleLogin}
+                onBack={handleBack}
+              />
+            )}
+
+            {screen === 'signing-in' && selectedRole && (
+              <SigningInScreen role={selectedRole} />
+            )}
+          </PageTransition>
+        </section>
       </main>
 
-      {/* Footer */}
       <footer className="text-center text-xs text-text-faint py-4 border-t border-border-subtle">
-        PeerSphere — AI-Based Placement Matching & Skill Gap Analysis Platform
+        PeerSphere — AI-Based Placement Matching &amp; Skill Gap Analysis Platform
       </footer>
     </div>
   );
 }
 
-// ─── Role Selection Screen ─────────────────────────────────────────
-
 function RoleSelectScreen({ onSelect }: { onSelect: (role: Role) => void }) {
   return (
-    <div className="w-full max-w-2xl space-y-8 animate-in fade-in duration-200">
-      <div className="text-center space-y-2">
+    <div className="w-full space-y-6">
+      <div className="space-y-2">
         <GlassBadge variant="accent" size="md">Institutional Sign-In</GlassBadge>
-        <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-text">
+        <h1 className="text-3xl font-bold tracking-tight text-text">
           Sign in to PeerSphere
         </h1>
-        <p className="text-text-muted text-sm max-w-md mx-auto">
-          Select your role to continue to your personalised workspace.
+        <p className="text-text-muted text-sm">
+          Select your institutional role to continue to your workspace.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {(Object.entries(ROLE_META) as [Role, typeof ROLE_META[Role]][]).map(([role, meta]) => (
           <button
             key={role}
@@ -221,7 +260,7 @@ function RoleSelectScreen({ onSelect }: { onSelect: (role: Role) => void }) {
             <GlassCard
               variant="surface"
               padding="lg"
-              className="h-full flex flex-col justify-between border-border hover:border-accent group-focus-visible:border-accent transition-base cursor-pointer"
+              className="h-full flex flex-col justify-between border-border hover:border-accent hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
             >
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
@@ -230,10 +269,10 @@ function RoleSelectScreen({ onSelect }: { onSelect: (role: Role) => void }) {
                   </div>
                   <GlassBadge variant="default" size="sm">{meta.badgeLabel}</GlassBadge>
                 </div>
-                <h2 className="text-xl font-bold text-text group-hover:text-accent transition-base">
+                <h2 className="text-lg font-bold text-text group-hover:text-accent transition-base">
                   {meta.label}
                 </h2>
-                <p className="text-sm text-text-muted leading-relaxed">{meta.description}</p>
+                <p className="text-xs text-text-muted leading-relaxed">{meta.description}</p>
                 <ul className="space-y-1.5 pt-1">
                   {meta.features.map((f) => (
                     <li key={f} className="flex items-center gap-2 text-xs text-text-muted">
@@ -242,17 +281,16 @@ function RoleSelectScreen({ onSelect }: { onSelect: (role: Role) => void }) {
                   ))}
                 </ul>
               </div>
-              <div className="pt-5 mt-4 border-t border-border-subtle">
-                {/* Visual CTA only — the whole card is the button (no nested <button>) */}
+              <div className="pt-4 mt-4 border-t border-border-subtle">
                 <span
                   aria-hidden
                   className={
                     role === 'student'
-                      ? 'inline-flex items-center justify-center w-full h-10 px-4 text-sm gap-2 font-medium rounded-sm bg-accent text-text-inverse shadow-sm group-hover:bg-accent-dark transition-base'
-                      : 'inline-flex items-center justify-center w-full h-10 px-4 text-sm gap-2 font-medium rounded-sm bg-surface-raised text-text border border-border shadow-sm group-hover:border-border-strong transition-base'
+                      ? 'inline-flex items-center justify-center w-full h-10 px-3 text-xs sm:text-sm gap-1.5 font-medium whitespace-nowrap rounded-md bg-accent text-text-inverse shadow-sm group-hover:bg-accent-dark transition-base'
+                      : 'inline-flex items-center justify-center w-full h-10 px-3 text-xs sm:text-sm gap-1.5 font-medium whitespace-nowrap rounded-md bg-surface-raised text-text border border-border shadow-sm group-hover:border-border-strong transition-base'
                   }
                 >
-                  Continue as {meta.label} →
+                  Continue as {meta.label} <ArrowRight size={15} />
                 </span>
               </div>
             </GlassCard>
@@ -260,14 +298,12 @@ function RoleSelectScreen({ onSelect }: { onSelect: (role: Role) => void }) {
         ))}
       </div>
 
-      <p className="text-center text-xs text-text-faint">
-        This is a demo platform. Use the pre-filled credentials on the next screen.
+      <p className="text-xs text-text-faint">
+        Seeded demo credentials are pre-filled on the next step for evaluation.
       </p>
     </div>
   );
 }
-
-// ─── Credentials Screen ────────────────────────────────────────────
 
 interface CredentialsScreenProps {
   role: Role;
@@ -298,20 +334,16 @@ function CredentialsScreen({
   const demo = DEMO_CREDENTIALS[role];
 
   return (
-    <div className="w-full max-w-md space-y-6 animate-in fade-in duration-200">
-      {/* Back button */}
+    <div className="w-full max-w-md mx-auto space-y-5">
       <button
         type="button"
         onClick={onBack}
         className="inline-flex items-center gap-1.5 text-caption text-text-muted hover:text-text transition-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ps-focus)] rounded-sm"
       >
-        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <polyline points="15 18 9 12 15 6" />
-        </svg>
+        <ArrowLeft size={14} />
         Choose a different role
       </button>
 
-      {/* Header */}
       <div className="space-y-1.5">
         <div className="flex items-center gap-2">
           <div className={`w-8 h-8 rounded-md ${meta.accentClass} flex items-center justify-center text-text-inverse font-bold text-sm`}>
@@ -323,9 +355,8 @@ function CredentialsScreen({
         <p className="text-sm text-text-muted">Enter your institutional credentials to continue.</p>
       </div>
 
-      {/* Login form */}
       <GlassCard variant="surface" padding="lg">
-        <form onSubmit={onLogin} className="space-y-5" noValidate>
+        <form onSubmit={onLogin} className="space-y-4" noValidate>
           <GlassInput
             label="Institutional Email"
             type="email"
@@ -337,7 +368,6 @@ function CredentialsScreen({
             fullWidth
           />
 
-          {/* Password field with show/hide toggle */}
           <div className="space-y-1">
             <label htmlFor="auth-password" className="text-sm font-medium text-text-muted block">Password</label>
             <div className="relative">
@@ -349,7 +379,7 @@ function CredentialsScreen({
                 autoComplete="current-password"
                 required
                 placeholder="Enter your password"
-                className="w-full h-10 px-3 pr-10 text-sm rounded-sm border border-border bg-surface text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ps-focus)]"
+                className="w-full h-10 px-3 pr-10 text-sm rounded-md border border-border bg-surface text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ps-focus)]"
               />
               <button
                 type="button"
@@ -357,22 +387,11 @@ function CredentialsScreen({
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
                 className="absolute inset-y-0 right-0 flex items-center px-3 text-text-muted hover:text-text transition-base focus-visible:outline-none"
               >
-                {showPassword ? (
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-                    <line x1="1" y1="1" x2="23" y2="23" />
-                  </svg>
-                ) : (
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                    <circle cx="12" cy="12" r="3" />
-                  </svg>
-                )}
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
           </div>
 
-          {/* Error message */}
           {error && (
             <div
               role="alert"
@@ -383,27 +402,14 @@ function CredentialsScreen({
             </div>
           )}
 
-          <GlassButton
-            type="submit"
-            variant="primary"
-            size="lg"
-            fullWidth
-          >
+          <GlassButton type="submit" variant="primary" size="lg" fullWidth>
             Sign in to {meta.label} Portal →
           </GlassButton>
         </form>
       </GlassCard>
 
-      {/* Demo credentials hint */}
       <GlassCard variant="canvas" padding="sm" className="text-xs text-text-muted space-y-1">
-        <div className="flex items-center gap-1.5 font-semibold text-text-faint uppercase tracking-wider">
-          <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <circle cx="12" cy="12" r="10" />
-            <line x1="12" y1="8" x2="12" y2="12" />
-            <line x1="12" y1="16" x2="12.01" y2="16" />
-          </svg>
-          Demo Credentials
-        </div>
+        <div className="font-semibold text-text-faint uppercase tracking-wider">Demo Credentials</div>
         <div>Email: <code className="font-mono text-text">{demo.email}</code></div>
         <div>Password: <code className="font-mono text-text">{demo.password}</code></div>
       </GlassCard>
@@ -411,12 +417,10 @@ function CredentialsScreen({
   );
 }
 
-// ─── Signing In Screen ─────────────────────────────────────────────
-
 function SigningInScreen({ role }: { role: Role }) {
   const meta = ROLE_META[role];
   return (
-    <div className="text-center space-y-5 animate-in fade-in duration-200">
+    <div className="text-center space-y-5 py-8">
       <div className={`w-16 h-16 rounded-2xl ${meta.accentClass} flex items-center justify-center text-text-inverse font-bold text-3xl shadow-md mx-auto`}>
         {meta.label[0]}
       </div>
@@ -426,18 +430,8 @@ function SigningInScreen({ role }: { role: Role }) {
           Redirecting to the {meta.label} workspace.
         </p>
       </div>
-      {/* Simple spinner */}
       <div className="flex justify-center">
-        <svg
-          className="w-8 h-8 text-accent animate-spin"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.5"
-          aria-label="Loading"
-        >
-          <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
-        </svg>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent" aria-label="Loading" />
       </div>
     </div>
   );

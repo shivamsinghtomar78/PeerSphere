@@ -8,6 +8,9 @@ import { GlassBadge, EligibilityBadge } from '@/components/ui/GlassBadge';
 import { StatCard } from '@/components/product/StatCard';
 import { MatchScore } from '@/components/product/MatchScore';
 import { SkillChip } from '@/components/product/SkillChip';
+import { PageTransition, StaggerContainer, StaggerItem } from '@/components/ui/MotionPrimitives';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { Award, Briefcase, AlertCircle, CheckCircle2 } from 'lucide-react';
 import {
   fetchDashboardData,
   getPrimaryMatch,
@@ -115,8 +118,15 @@ export default function StudentDashboardPage() {
   if (isLoading) {
     return (
       <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
-        <div className="text-center py-12">
-          <p className="text-text-muted">Loading dashboard...</p>
+        <Skeleton className="h-9 w-64" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-28 w-full rounded-xl" />
+          ))}
+        </div>
+        <div className="bento-grid">
+          <Skeleton className="h-72 w-full col-span-12 lg:col-span-7 rounded-xl" />
+          <Skeleton className="h-72 w-full col-span-12 lg:col-span-5 rounded-xl" />
         </div>
       </div>
     );
@@ -146,7 +156,7 @@ export default function StudentDashboardPage() {
   }
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+    <PageTransition className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
       {/* Welcome Banner */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -157,7 +167,7 @@ export default function StudentDashboardPage() {
             {student.department} • {student.program} (Year {student.year}) • CGPA: {student.cgpa}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <Link href="/student/profile">
             <GlassButton variant="secondary" size="sm">
               Update Resume
@@ -172,33 +182,50 @@ export default function StudentDashboardPage() {
       </div>
 
       {/* Top Stat Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          label="Placement Readiness"
-          value={`${student.placementReadiness}%`}
-          delta="Ready for Tier 1"
-          deltaType="positive"
-          subtext="Target: 85%+"
-        />
-        <StatCard
-          label="Active Applications"
-          value={recentApplications.length}
-          subtext={`${recentApplications.filter((a) => a.status === 'under_review').length} Under Review, ${recentApplications.filter((a) => a.status === 'shortlisted').length} Shortlisted`}
-        />
-        <StatCard
-          label="High Priority Skill Gaps"
-          value={highPriorityGaps.length}
-          delta={highPriorityGaps.map(g => g.skill.name).join(', ')}
-          deltaType="negative"
-          subtext="Actionable in 4 weeks"
-        />
-        <StatCard
-          label="Target Roles Eligible"
-          value={`${recommendedFrontendJobs.length} of ${frontendJobs.length}`}
-          deltaType="positive"
-          subtext="Eligibility verified"
-        />
-      </div>
+      <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StaggerItem>
+          <StatCard
+            label="Placement Readiness"
+            value={`${student.placementReadiness}%`}
+            icon={<Award size={18} />}
+            delta={`Profile ${student.profileCompleteness}% complete`}
+            deltaType={student.placementReadiness >= 75 ? 'positive' : 'neutral'}
+            subtext={`${student.skills.length} verified/manual skills`}
+            className="h-full ps-bento-glow"
+          />
+        </StaggerItem>
+        <StaggerItem>
+          <StatCard
+            label="Active Applications"
+            value={recentApplications.length}
+            icon={<Briefcase size={18} />}
+            subtext={`${recentApplications.filter((a) => a.status === 'under_review').length} Under Review • ${recentApplications.filter((a) => a.status === 'shortlisted').length} Shortlisted`}
+            className="h-full"
+          />
+        </StaggerItem>
+        <StaggerItem>
+          <StatCard
+            label="High Priority Skill Gaps"
+            value={highPriorityGaps.length}
+            icon={<AlertCircle size={18} />}
+            delta={highPriorityGaps.length > 0 ? highPriorityGaps.map(g => g.skill.name).slice(0, 2).join(', ') : 'No critical gaps'}
+            deltaType={highPriorityGaps.length > 0 ? 'negative' : 'positive'}
+            subtext={`${skillGaps.length} total gaps identified`}
+            className="h-full"
+          />
+        </StaggerItem>
+        <StaggerItem>
+          <StatCard
+            label="Published Drives"
+            value={recommendedFrontendJobs.length}
+            icon={<CheckCircle2 size={18} />}
+            delta={`${evaluations.length} evaluations run`}
+            deltaType="positive"
+            subtext="Open for applications"
+            className="h-full"
+          />
+        </StaggerItem>
+      </StaggerContainer>
 
       {/* Apple Bento Grid Section */}
       <div className="bento-grid">
@@ -334,7 +361,7 @@ export default function StudentDashboardPage() {
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-title text-text font-bold">Active Improvement Track</h3>
                 <GlassBadge variant="accent" size="sm">
-                  Week 2 of 5
+                  {primaryRecommendation.estimatedTimeWeeks} Weeks Est.
                 </GlassBadge>
               </div>
               <p className="text-xs text-text-muted mb-4">
@@ -403,7 +430,9 @@ export default function StudentDashboardPage() {
           </div>
 
           <div className="mt-4 pt-3 border-t border-border-subtle flex items-center justify-between">
-            <span className="text-caption text-text-faint">Resume v{student.resumeUpdatedAt ? '2.1' : '1.0'} active</span>
+            <span className="text-caption text-text-faint">
+              {student.resumeUpdatedAt ? 'Active resume on file' : 'No resume uploaded yet'}
+            </span>
             <Link href="/student/jobs">
               <GlassButton variant="ghost" size="sm">
                 Search More Openings →
@@ -412,6 +441,6 @@ export default function StudentDashboardPage() {
           </div>
         </GlassCard>
       </div>
-    </div>
+    </PageTransition>
   );
 }

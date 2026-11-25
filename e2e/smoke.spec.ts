@@ -6,9 +6,9 @@ test.describe('smoke', () => {
     await expect(page.getByRole('heading', { level: 1 })).toContainText(/never black-box/i);
     await expect(page.getByRole('link', { name: /enter as student/i })).toBeVisible();
     await expect(page.getByRole('link', { name: /enter as placement officer/i })).toBeVisible();
-    // The hero visual is a live-feeling score breakdown
-    await expect(page.getByText('Match breakdown')).toBeVisible();
-    await expect(page.getByText(/CGPA requirement: 7\.5/)).toBeVisible();
+    // The hero StageShow visual is an interactive score breakdown
+    await expect(page.getByText(/InnovateTech Solutions/i).first()).toBeVisible();
+    await expect(page.getByText(/CGPA 8\.42 ≥ 7\.50/)).toBeVisible();
   });
 
   test('auth flow: role selection reveals the login form', async ({ page }) => {

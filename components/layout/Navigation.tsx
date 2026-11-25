@@ -206,7 +206,7 @@ export function Header({ role, title, onMenuOpen }: HeaderProps) {
         <span className="text-[10px] leading-none font-bold uppercase tracking-[0.16em] text-text-faint">
           {role === 'student' ? 'Student workspace' : 'Placement office'}
         </span>
-        <h1 className="mt-1 text-title text-text truncate">{displayTitle}</h1>
+        <span className="mt-1 text-title text-text truncate">{displayTitle}</span>
       </div>
 
       <div className="ml-auto flex items-center gap-2">
@@ -264,7 +264,9 @@ export function BottomNav({ role }: { role: 'student' | 'placement' }) {
                 )}
               >
                 <NavIcon path={item.iconPath} />
-                <span>{item.label}</span>
+                <span className="whitespace-nowrap text-[11px] leading-none">
+                  {item.label === 'Match Analysis' ? 'Match' : item.label}
+                </span>
               </Link>
             </li>
           );

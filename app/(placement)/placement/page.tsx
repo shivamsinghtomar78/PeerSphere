@@ -9,6 +9,8 @@ import { StatCard } from '@/components/product/StatCard';
 import { MatchScore } from '@/components/product/MatchScore';
 import { HumanReviewBanner } from '@/components/product/HumanReviewBanner';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { PageTransition, StaggerContainer, StaggerItem } from '@/components/ui/MotionPrimitives';
+import { Users, Briefcase, FileText, Award, TrendingUp } from 'lucide-react';
 import {
   fetchPlacementDashboardData,
   fetchCandidatesForJob,
@@ -121,7 +123,7 @@ export default function PlacementDashboardPage() {
   }
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+    <PageTransition className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -129,11 +131,11 @@ export default function PlacementDashboardPage() {
             Placement Cell Operations
           </h1>
           <p className="text-sm text-text-muted mt-1">
-            Campus placement drives, AI candidate matching, skill gap analytics, and shortlisting governance.
+            Campus placement drives, deterministic candidate matching, skill-gap analytics, and shortlisting governance.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <GlassButton href="/placement/compare" variant="secondary" size="sm">
             Compare Candidates
           </GlassButton>
@@ -145,23 +147,32 @@ export default function PlacementDashboardPage() {
 
       {/* Flagged Human Review Alert if any */}
       {safeRecentCandidates.some((c) => c.matchResult?.requiresHumanReview) && (
-        <HumanReviewBanner note="Some candidate evaluations require human review. Please check the audit logs." />
+        <HumanReviewBanner note="Some candidate evaluations require human review. Please inspect the flagged evaluations or audit log." />
       )}
 
-      {/* Top Stat KPI Row */}
+      {/* Top Stat KPI Row (100% live DB metrics) */}
       {stats && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {stats.map((stat, idx) => (
-            <StatCard
-              key={idx}
-              label={stat.label}
-              value={stat.value}
-              delta={idx === 0 ? "+12 this semester" : idx === 2 ? "Avg 32 per drive" : idx === 3 ? "18 Offers Extended" : undefined}
-              deltaType={idx === 0 || idx === 3 ? "positive" : idx === 2 ? "neutral" : undefined}
-              subtext={idx === 0 ? "98.4% profiles complete" : idx === 1 ? "5 closing this week" : undefined}
-            />
-          ))}
-        </div>
+        <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {stats.slice(0, 4).map((stat, idx) => {
+            const icons = [
+              <Users key="u" size={18} />,
+              <Briefcase key="b" size={18} />,
+              <FileText key="f" size={18} />,
+              <Award key="a" size={18} />,
+              <TrendingUp key="t" size={18} />,
+            ];
+            return (
+              <StaggerItem key={stat.label}>
+                <StatCard
+                  label={stat.label}
+                  value={stat.value}
+                  icon={icons[idx % icons.length]}
+                  className="h-full ps-bento-glow"
+                />
+              </StaggerItem>
+            );
+          })}
+        </StaggerContainer>
       )}
 
       {/* Apple Bento Grid */}
@@ -381,6 +392,6 @@ export default function PlacementDashboardPage() {
           </div>
         </GlassCard>
       </div>
-    </div>
+    </PageTransition>
   );
 }

@@ -37,7 +37,12 @@ export async function POST(
     }
 
     const { evaluationId } = await params;
-    const body = await request.json();
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return badRequestError('Invalid or empty JSON body');
+    }
     const parsed = createOverrideSchema.safeParse(body);
 
     if (!parsed.success) {
