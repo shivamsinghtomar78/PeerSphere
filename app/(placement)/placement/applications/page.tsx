@@ -7,6 +7,7 @@ import { GlassButton } from '@/components/ui/GlassButton';
 import { GlassBadge, EligibilityBadge } from '@/components/ui/GlassBadge';
 import { MatchScore } from '@/components/product/MatchScore';
 import { LoadingState, EmptyState, ErrorState } from '@/components/states';
+import { PageTransition } from '@/components/ui/MotionPrimitives';
 import {
   fetchAllApplications,
   fetchAllJobs,
@@ -69,7 +70,7 @@ export default function PlacementApplicationsPage() {
   }
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+    <PageTransition className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -175,6 +176,6 @@ export default function PlacementApplicationsPage() {
           </table>
         </div>
       </GlassCard>
-    </div>
+    </PageTransition>
   );
 }

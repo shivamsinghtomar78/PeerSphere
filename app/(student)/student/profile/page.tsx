@@ -9,6 +9,7 @@ import { GlassBadge } from '@/components/ui/GlassBadge';
 import { SkillChip } from '@/components/product/SkillChip';
 import { useToast } from '@/components/ui/Toast';
 import { LoadingState, EmptyState, ErrorState } from '@/components/states';
+import { PageTransition } from '@/components/ui/MotionPrimitives';
 import {
   fetchMyProfile,
   addMySkill,
@@ -39,9 +40,10 @@ function formatFileSize(bytes: number): string {
 
 function resumeStateBadge(state: string): { label: string; variant: 'success' | 'warning' | 'danger' | 'muted' } {
   const s = String(state || '').toUpperCase();
-  if (s === 'PARSED') return { label: 'Parsed', variant: 'success' };
-  if (s === 'UPLOADED' || s === 'PARSING') return { label: 'Processing', variant: 'warning' };
-  if (s === 'FAILED') return { label: 'Parse failed', variant: 'danger' };
+  if (s === 'EXTRACTED') return { label: 'Extracted', variant: 'success' };
+  if (s === 'UPLOADED' || s === 'SCANNED') return { label: 'Verified PDF', variant: 'success' };
+  if (s === 'EXTRACTING') return { label: 'Extracting', variant: 'warning' };
+  if (s === 'FAILED' || s === 'QUARANTINED') return { label: 'Attention', variant: 'danger' };
   return { label: state || 'On file', variant: 'muted' };
 }
 
@@ -198,7 +200,7 @@ export default function StudentProfilePage() {
   }
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-5xl mx-auto">
+    <PageTransition className="p-4 md:p-6 lg:p-8 space-y-6 max-w-5xl mx-auto">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -417,6 +419,6 @@ export default function StudentProfilePage() {
           ))}
         </div>
       </GlassCard>
-    </div>
+    </PageTransition>
   );
 }

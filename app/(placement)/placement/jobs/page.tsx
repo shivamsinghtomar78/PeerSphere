@@ -9,6 +9,7 @@ import { GlassDialog } from '@/components/ui/GlassDialog';
 import { ClayButton } from '@/components/ui/ClayButton';
 import { SkillChip } from '@/components/product/SkillChip';
 import { LoadingState, ErrorState } from '@/components/states';
+import { PageTransition } from '@/components/ui/MotionPrimitives';
 import {
   fetchAllJobs,
   createJob,
@@ -153,7 +154,7 @@ export default function PlacementJobsPage() {
   };
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+    <PageTransition className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -380,6 +381,6 @@ export default function PlacementJobsPage() {
           )}
         </div>
       </GlassDialog>
-    </div>
+    </PageTransition>
   );
 }

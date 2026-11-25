@@ -10,6 +10,7 @@ import { MatchScore, ConfidenceBadge } from '@/components/product/MatchScore';
 import { SkillChip } from '@/components/product/SkillChip';
 import { useToast } from '@/components/ui/Toast';
 import { LoadingState, EmptyState, ErrorState } from '@/components/states';
+import { PageTransition } from '@/components/ui/MotionPrimitives';
 import {
   fetchAllJobs,
   fetchCandidatesForJob,
@@ -191,7 +192,7 @@ export default function CandidateRankingPage() {
   }
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+    <PageTransition className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -377,6 +378,6 @@ export default function CandidateRankingPage() {
           </table>
         </div>
       </GlassCard>
-    </div>
+    </PageTransition>
   );
 }

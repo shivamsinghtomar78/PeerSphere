@@ -4,8 +4,9 @@ import React, { useState, useEffect } from 'react';
 import { GlassInput } from '@/components/ui/GlassInput';
 import { GlassTabs } from '@/components/ui/GlassTabs';
 import { JobCard } from '@/components/product/JobCard';
-import { EmptyState } from '@/components/states';
+import { EmptyState, ErrorState } from '@/components/states';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { PageTransition } from '@/components/ui/MotionPrimitives';
 import { fetchJobs, fetchMyApplications, applyToJob, convertToFrontendJob, convertToFrontendApplication } from '@/services/student-api';
 import type { Job, Application, MatchResult } from '@/types';
 export default function StudentJobsPage() {
@@ -117,18 +118,13 @@ export default function StudentJobsPage() {
   if (error) {
     return (
       <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
-        <div className="text-center py-12">
-          <p className="text-text-danger">Error: {error}</p>
-          <button onClick={() => window.location.reload()} className="text-accent hover:underline mt-2">
-            Retry
-          </button>
-        </div>
+        <ErrorState title="Failed to load jobs" message={error} onRetry={() => window.location.reload()} />
       </div>
     );
   }
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+    <PageTransition className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
       {/* Header */}
       <div>
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-text">
@@ -183,6 +179,6 @@ export default function StudentJobsPage() {
           description="Try adjusting your search terms or filter selection to find relevant placement drives."
         />
       )}
-    </div>
+    </PageTransition>
   );
 }

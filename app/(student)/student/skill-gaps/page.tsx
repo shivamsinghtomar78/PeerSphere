@@ -7,6 +7,7 @@ import { GlassButton } from '@/components/ui/GlassButton';
 import { GlassTabs } from '@/components/ui/GlassTabs';
 import { SkillGapCard } from '@/components/product/SkillGapCard';
 import { LoadingState, EmptyState, ErrorState } from '@/components/states';
+import { PageTransition } from '@/components/ui/MotionPrimitives';
 import {
   fetchMyEvaluations,
   extractSkillGapsFromEvaluations,
@@ -75,7 +76,7 @@ export default function SkillGapsPage() {
   );
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-5xl mx-auto">
+    <PageTransition className="p-4 md:p-6 lg:p-8 space-y-6 max-w-5xl mx-auto">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -144,6 +145,6 @@ export default function SkillGapsPage() {
           description="Your profile looks strong! Continue building skills to stay competitive."
         />
       )}
-    </div>
+    </PageTransition>
   );
 }

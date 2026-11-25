@@ -6,6 +6,7 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { RecommendationCard } from '@/components/product/RecommendationCard';
 import { LoadingState, EmptyState, ErrorState } from '@/components/states';
+import { PageTransition } from '@/components/ui/MotionPrimitives';
 import {
   fetchMyEvaluations,
   fetchMyProfile,
@@ -196,7 +197,7 @@ export default function RecommendationsPage() {
     : 0;
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-5xl mx-auto">
+    <PageTransition className="p-4 md:p-6 lg:p-8 space-y-6 max-w-5xl mx-auto">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -250,6 +251,6 @@ export default function RecommendationsPage() {
           />
         )}
       </div>
-    </div>
+    </PageTransition>
   );
 }

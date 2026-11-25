@@ -170,7 +170,8 @@ a[class*='bg-accent']:hover {
 }
 
 .ps-page-frame th {
-  background: color-mix(in srgb, var(--ps-canvas-subtle) 84%, var(--ps-cobalt) 5%);
+  background: color-mix(in srgb, var(--ps-canvas-subtle) 92%, var(--ps-cobalt) 4%);
+  color: var(--ps-text);
   font-weight: 700;
 }
 

@@ -8,6 +8,7 @@ import { GlassBadge } from '@/components/ui/GlassBadge';
 import { SkillChip } from '@/components/product/SkillChip';
 import { SkeletonTableRow } from '@/components/ui/Skeleton';
 import { LoadingState, ErrorState } from '@/components/states';
+import { PageTransition } from '@/components/ui/MotionPrimitives';
 import {
   fetchAllStudents,
   convertToFrontendStudent,
@@ -67,7 +68,7 @@ export default function PlacementStudentsPage() {
   });
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+    <PageTransition className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -183,6 +184,6 @@ export default function PlacementStudentsPage() {
           </table>
         </div>
       </GlassCard>
-    </div>
+    </PageTransition>
   );
 }

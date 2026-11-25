@@ -15,6 +15,7 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { StatCard } from '@/components/product/StatCard';
 import { LoadingState, ErrorState } from '@/components/states';
+import { PageTransition } from '@/components/ui/MotionPrimitives';
 import {
   fetchPlacementStats,
   fetchSkillGapsAnalysis,
@@ -25,14 +26,14 @@ import {
 import type { BackendPlacementStats } from '@/types/api';
 import type { SkillGapDistribution, Student } from '@/types';
 
-// Priority → bar color mapping
+// Priority → bar color mapping (Academic Cobalt palette)
 const PRIORITY_COLOR: Record<string, string> = {
-  high: '#ef4444',
-  medium: '#f59e0b',
-  low: '#6366f1',
+  high: '#dc2626',
+  medium: '#d97706',
+  low: '#2457d6',
 };
 
-const ACCENT_COLOR = '#6366f1';
+const ACCENT_COLOR = '#2457d6';
 
 export default function PlacementAnalyticsPage() {
   const [rawStats, setRawStats] = useState<BackendPlacementStats | null>(null);
@@ -126,7 +127,7 @@ export default function PlacementAnalyticsPage() {
   }
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+    <PageTransition className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -315,6 +316,6 @@ export default function PlacementAnalyticsPage() {
         </GlassCard>
 
       </div>
-    </div>
+    </PageTransition>
   );
 }

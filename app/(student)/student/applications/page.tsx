@@ -7,7 +7,8 @@ import { GlassButton } from '@/components/ui/GlassButton';
 import { GlassBadge } from '@/components/ui/GlassBadge';
 import { MatchScore } from '@/components/product/MatchScore';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { EmptyState } from '@/components/states';
+import { EmptyState, ErrorState } from '@/components/states';
+import { PageTransition } from '@/components/ui/MotionPrimitives';
 import { fetchMyApplications, fetchJobs, convertToFrontendApplication, convertToFrontendJob } from '@/services/student-api';
 import { formatDate, applicationStatusLabel } from '@/lib/utils';
 import type { Job, Application } from '@/types';
@@ -54,9 +55,10 @@ export default function StudentApplicationsPage() {
   if (isLoading) {
     return (
       <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-6xl mx-auto">
+        <Skeleton className="h-9 w-56" />
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-32 w-full" />
+            <Skeleton key={i} className="h-32 w-full rounded-xl" />
           ))}
         </div>
       </div>
@@ -66,18 +68,13 @@ export default function StudentApplicationsPage() {
   if (error) {
     return (
       <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-6xl mx-auto">
-        <div className="text-center py-12">
-          <p className="text-text-danger">Error: {error}</p>
-          <button onClick={() => window.location.reload()} className="text-accent hover:underline mt-2">
-            Retry
-          </button>
-        </div>
+        <ErrorState title="Failed to load applications" message={error} onRetry={() => window.location.reload()} />
       </div>
     );
   }
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-6xl mx-auto">
+    <PageTransition className="p-4 md:p-6 lg:p-8 space-y-6 max-w-6xl mx-auto">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -169,6 +166,6 @@ export default function StudentApplicationsPage() {
           />
         )}
       </div>
-    </div>
+    </PageTransition>
   );
 }

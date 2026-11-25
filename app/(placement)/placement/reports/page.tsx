@@ -7,6 +7,7 @@ import { GlassBadge } from '@/components/ui/GlassBadge';
 import { GlassDialog } from '@/components/ui/GlassDialog';
 import { useToast } from '@/components/ui/Toast';
 import { LoadingState, EmptyState, ErrorState } from '@/components/states';
+import { PageTransition } from '@/components/ui/MotionPrimitives';
 import {
   fetchReports,
   generateReport,
@@ -86,7 +87,7 @@ export default function PlacementReportsPage() {
   const formattedReports = reports;
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-6xl mx-auto">
+    <PageTransition className="p-4 md:p-6 lg:p-8 space-y-6 max-w-6xl mx-auto">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -201,6 +202,6 @@ export default function PlacementReportsPage() {
           </div>
         )}
       </GlassDialog>
-    </div>
+    </PageTransition>
   );
 }
